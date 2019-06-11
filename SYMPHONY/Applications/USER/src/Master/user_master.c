@@ -90,7 +90,7 @@ int user_initialize(void **user)
 
 int user_readparams(void *user, char *filename, int argc, char **argv)
 {
-   FILE *f;
+   FILE *f = NULL;
    char line[50], key[50], value[50], c, tmp;
    int i, j, tmpi;
    /* This gives you access to the user data structure*/
