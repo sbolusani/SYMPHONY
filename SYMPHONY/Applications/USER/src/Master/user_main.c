@@ -104,10 +104,19 @@ int main(int argc, char **argv)
 
       CALL_FUNCTION( user_read_aux_data(prob, prob->par.auxfile) );
       CALL_FUNCTION( user_rearrange_mat_vec(prob) );
-      CALL_FUNCTION( user_load_bilevel_problem(env, prob) );
+      CALL_FUNCTION( user_preprocess_single_level_prob(prob) );
+      CALL_FUNCTION( user_generate_bilevel_problem(env, prob) );
+      CALL_FUNCTION( user_preprocess_bilevel_prob(prob) );
+      //TODO: Load the problem!!
 
    } else {
-
+      /* For two cases:
+       * (1) Read a single MPS file, consider first variable as upper-level
+       *     variable, and proceed ahead for creating/solving a bilevel prob.
+       * (2) Read a single MPS file, and solve an LP in parallel by changing
+       *     certain parameters in the user_load_problem function.
+      */
+      //TODO: Remove (1) for sure, and also deal with (2) in a better way.
       CALL_FUNCTION( user_load_problem(env, prob) );
 
    }
@@ -1102,13 +1111,166 @@ int user_rearrange_mat_vec(user_problem *prob) {
 
 
 /*===========================================================================*\
+   For various preprocessing operations on orig. prob. as single-level prob.:
+   (1) Variable bound tightening of original cols
+   (2)
+\*===========================================================================*/
+
+int user_preprocess_single_level_prob(user_problem *prob) {
+
+    /* Variable bound tightening */
+    user_orig_col_bound_tightening(prob);
+
+}
+
+
+/*===========================================================================*\
+       Variable bound tightening of original cols
+\*===========================================================================*/
+
+int user_orig_col_bound_tightening(user_problem *prob) {
+
+   //SYMPHONY environment
+   sym_environment *env = sym_open_environment();
+
+   /* Load continuous version of the given instance to SYMPHONY */
+   sym_explicit_load_problem(env, prob->mip->n, prob->mip->m, prob->mip->matbeg,
+			     prob->mip->matind, prob->mip->matval,
+                             prob->mip->lb, prob->mip->ub, NULL, prob->mip->obj,
+                             NULL, prob->mip->sense, prob->mip->rhs,
+			     prob->mip->rngval, true);
+
+   //Get certain data for the given instance
+   warm_start_desc * ws;
+   int num_cols, num_rows, i;
+   double *orig_lb, *orig_ub, new_lb, new_ub, etol = 1e-6;
+
+   num_cols = prob->mip->n;
+   num_rows = prob->mip->m;
+   orig_lb = prob->mip->lb;
+   orig_ub = prob->mip->ub;
+
+   //Set parameters for warm starting
+   sym_set_int_param(env, "keep_warm_start", TRUE);
+   sym_set_int_param(env, "do_reduced_cost_fixing", 0);
+   sym_set_int_param(env, "do_primal_heuristic", 0);
+   sym_set_int_param(env, "prep_level", -1);
+   sym_set_int_param(env, "verbosity", -5);
+
+   /* Solve a minimization problem corresponding to first variable,
+    * i.e., minimize first variable s.t. given two levels of constraints.
+   */
+   //Set objective function at first
+   sym_set_obj_coeff(env, 0, 1);
+   for (i = 1; i < num_cols; i++) {
+       sym_set_obj_coeff(env, i, 0);
+   }
+   sym_set_obj_sense(env, 1);
+   //Now, solve the problem and get useful information
+   sym_solve(env);
+   sym_get_obj_val(env, &new_lb);
+   ws = sym_get_warm_start(env, true);
+
+   //Certain parameters
+   int total_bound_changes = 0, threshold_bound_changes = int(0.25*2*num_cols);
+   int total_refinements = 4, j;
+
+   //Reset certain (unwanted) parameters to defaults
+   sym_set_int_param(env, "keep_warm_start", FALSE);
+   sym_set_int_param(env, "do_reduced_cost_fixing", 1);
+   sym_set_int_param(env, "do_primal_heuristic", 1);
+//   sym_set_int_param(env, "prep_level", 5);
+
+   for (j = 0; j < total_refinements; j++) {
+      /* Solve remaining minimization problems for other variables */
+      for (i = 1; i < num_cols; i++) {
+         //Changing LB of previous variable if better bound found
+         if (new_lb >= orig_lb[i-1] + etol) {
+            sym_set_col_lower(env, i-1, new_lb);
+            orig_lb[i-1] = new_lb;
+            total_bound_changes++;
+         }
+         //Changing objective function relative to previous objective function
+         sym_set_obj_coeff(env, i-1, 0);
+         sym_set_obj_coeff(env, i, 1);
+         //Now, solve the problem and get useful information
+         sym_set_warm_start(env, ws);
+
+         sym_warm_solve(env);
+         sym_get_obj_val(env, &new_lb);
+      }
+      //Changing LB of last variable if better bound found
+      if (new_lb >= orig_lb[i-1] + etol) {
+         sym_set_col_lower(env, i-1, new_lb);
+         orig_lb[i-1] = new_lb;
+         total_bound_changes++;
+      }
+
+      /* Now, solve the maximization problem for first variable */
+      //Changing objective function relative to previous objective function
+      sym_set_obj_coeff(env, num_cols-1, 0);
+      sym_set_obj_coeff(env, 0, -1);
+      //Now, solve the problem and get useful information
+      sym_set_warm_start(env, ws);
+
+      sym_warm_solve(env);
+      sym_get_obj_val(env, &new_ub);
+
+      /* Solve remaining maximization problems for other variables */
+      for (i = 1; i < num_cols; i++) {
+         //Changing UB of previous variable if better bound found
+         if (-new_ub <= orig_ub[i-1] - etol) {
+            sym_set_col_upper(env, i-1, -new_ub);
+            orig_ub[i-1] = -new_ub;
+            total_bound_changes++;
+         }
+         //Changing objective function relative to previous objective function
+         sym_set_obj_coeff(env, i-1, 0);
+         sym_set_obj_coeff(env, i, -1);
+         //Now, solve the problem and get useful information
+         sym_set_warm_start(env, ws);
+
+         sym_warm_solve(env);
+         sym_get_obj_val(env, &new_ub);
+      }
+      //Changing UB of last variable if better bound found
+      if (-new_ub <= orig_ub[i-1] - etol) {
+         sym_set_col_upper(env, i-1, -new_ub);
+         orig_ub[i-1] = -new_ub;
+         total_bound_changes++;
+      }
+      printf("\nMAIN: Done solving all min/max bounding problems in refinement %d\n\n", j);
+
+      if (total_bound_changes >= threshold_bound_changes) {
+         //Reset total_bound_changes
+         total_bound_changes = 0;
+
+         //Changing objective function back to minimizing first coefficient
+         sym_set_obj_coeff(env, i-1, 0);
+         sym_set_obj_coeff(env, 0, 1);
+         //Now, solve the problem and get useful information
+         sym_set_warm_start(env, ws);
+
+         sym_warm_solve(env);
+         sym_get_obj_val(env, &new_lb);
+      } else {
+         break;
+      }
+   }
+
+   FREE(ws);
+   sym_close_environment(env);
+}
+
+
+/*===========================================================================*\
  * TODO: Suresh: 
  *        Assumptions in bilevel benchmarks:
  *         1. All upper level variables occur before any lower level variables.
  *         2. All upper level constraints occur before any lower level constraint.
 \*===========================================================================*/
 
-int user_load_bilevel_problem(sym_environment *env, user_problem *prob) {
+int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
 
    int i, j, index, index1, n, m, nz, nz_index = 0, *column_starts, *matrix_indices;
    double *matrix_values, *lb, *ub, *obj, *rhs, *rngval;
@@ -1503,33 +1665,31 @@ int user_load_bilevel_problem(sym_environment *env, user_problem *prob) {
    prob->ccnum          =   0;
    index = 0;
    index1 = num_upperlevel_cons;
-   for (i = 0; i < n;) {
+   for (i = 0; i < n; i++) {
       if (i < prob->mip->n) {
          prob->ccind[i] = -1;
-         i++;
       } else if (i < prob->mip->n + prob->mip->m - num_upperlevel_cons) {
          if (sense[i - prob->mip->n + num_upperlevel_cons] == 'E') {
             prob->ccind[i] = -1;
-            i++;
             index1++;
          } else {
             prob->ccind[i] = index1;
             prob->ccnum++;
-            i++;
             index1++;
          }
       } else {
          prob->ccind[i] = index1;
          prob->ccnum++;
-         i++;
          index1++;
       }
    }
 
    /* Load the problem to SYMPHONY */   
+   /*
    sym_explicit_load_problem(env, n, m, column_starts, matrix_indices,
 			     matrix_values, lb, ub, is_int, obj, 0, sense, rhs,
 			     rngval, true);
+   */
 
    /* Change prob->mip values to final problem values */
    prob->mip->n = n;
@@ -1591,5 +1751,188 @@ int user_load_bilevel_problem(sym_environment *env, user_problem *prob) {
 
    return (FUNCTION_TERMINATED_NORMALLY);
 }
+
+
+/*===========================================================================*\
+   For various preprocessing operations on the bilevel prob.:
+   (1) Variable bound tightening
+   (2)
+\*===========================================================================*/
+
+int user_preprocess_bilevel_prob(user_problem *prob) {
+
+    /* Variable bound tightening */
+    user_col_bound_tightening(prob);
+
+}
+
+
+/*===========================================================================*\
+       Variable bound tightening
+\*===========================================================================*/
+
+int user_col_bound_tightening(user_problem *prob) {
+
+   //SYMPHONY environment
+   sym_environment *env = sym_open_environment();
+
+   /* Load continuous version of the given instance to SYMPHONY */
+   sym_explicit_load_problem(env, prob->mip->n, prob->mip->m, prob->mip->matbeg,
+			     prob->mip->matind, prob->mip->matval,
+                             prob->mip->lb, prob->mip->ub, NULL, prob->mip->obj,
+                             NULL, prob->mip->sense, prob->mip->rhs,
+			     prob->mip->rngval, true);
+
+   //Get certain data for the given instance
+   warm_start_desc * ws;
+   int num_cols, num_rows, i, *ccind;
+   double *orig_lb, *orig_ub, new_lb, new_ub, etol = 1e-6;
+   char *sense;
+
+   num_cols = prob->mip->n;
+   num_rows = prob->mip->m;
+   ccind = prob->ccind;
+   orig_lb = prob->mip->lb;
+   orig_ub = prob->mip->ub;
+   sense = prob->mip->sense;
+
+   //Set parameters for warm starting
+   sym_set_int_param(env, "keep_warm_start", TRUE);
+   sym_set_int_param(env, "do_reduced_cost_fixing", 0);
+   sym_set_int_param(env, "do_primal_heuristic", 0);
+   sym_set_int_param(env, "prep_level", -1);
+   sym_set_int_param(env, "verbosity", -5);
+
+   /* Solve a minimization problem corresponding to first variable,
+    * i.e., minimize first variable s.t. all linear constraints.
+   */
+   //Set objective function at first
+   sym_set_obj_coeff(env, 0, 1);
+   for (i = 1; i < num_cols; i++) {
+       sym_set_obj_coeff(env, i, 0);
+   }
+   sym_set_obj_sense(env, 1);
+   //Now, solve the problem and get useful information
+   sym_solve(env);
+   sym_get_obj_val(env, &new_lb);
+   ws = sym_get_warm_start(env, true);
+
+   //Certain parameters
+   int total_bound_changes = 0, threshold_bound_changes = int(0.25*2*num_cols);
+   int total_refinements = 4, j, ccindex;
+
+   //Reset certain (unwanted) parameters to defaults
+   sym_set_int_param(env, "keep_warm_start", FALSE);
+   sym_set_int_param(env, "do_reduced_cost_fixing", 1);
+   sym_set_int_param(env, "do_primal_heuristic", 1);
+//   sym_set_int_param(env, "prep_level", 5);
+
+   for (j = 0; j < total_refinements; j++) {
+      /* Solve remaining minimization problems for other variables */
+      for (i = 1; i < num_cols; i++) {
+         //If better bound found:
+         if (new_lb >= orig_lb[i-1] + etol) {
+            //Changing LB of appropriate col.
+            sym_set_col_lower(env, i-1, new_lb);
+            orig_lb[i-1] = new_lb;
+
+            //Incrementing total_bound_changes
+            total_bound_changes++;
+
+            //Checking if new_lb > 0
+            if (new_lb >= etol) {
+               //Make certain changes if a complementarity condition exists
+               ccindex = ccind[i-1];
+               if (ccindex >= 0) {
+                  sense[ccindex] = 'E';
+                  ccind[i-1] = -1;
+               }
+            }
+         }
+         //Changing objective function relative to previous objective function
+         sym_set_obj_coeff(env, i-1, 0);
+         sym_set_obj_coeff(env, i, 1);
+         //Now, solve the problem and get useful information
+         sym_set_warm_start(env, ws);
+
+         sym_warm_solve(env);
+         sym_get_obj_val(env, &new_lb);
+      }
+      //If better bound for last column found:
+      if (new_lb >= orig_lb[i-1] + etol) {
+         //Changing LB of appropriate col.
+         sym_set_col_lower(env, i-1, new_lb);
+         orig_lb[i-1] = new_lb;
+
+         //Incrementing total_bound_changes
+         total_bound_changes++;
+
+         //Checking if new_lb > 0
+         if (new_lb >= etol) {
+            //Make certain changes if a complementarity condition exists
+            ccindex = ccind[i-1];
+            if (ccindex >= 0) {
+               sense[ccindex] = 'E';
+               ccind[i-1] = -1;
+            }
+         }
+      }
+
+      /* Now, solve the maximization problem for first variable */
+      //Changing objective function relative to previous objective function
+      sym_set_obj_coeff(env, num_cols-1, 0);
+      sym_set_obj_coeff(env, 0, -1);
+      //Now, solve the problem and get useful information
+      sym_set_warm_start(env, ws);
+
+      sym_warm_solve(env);
+      sym_get_obj_val(env, &new_ub);
+
+      /* Solve remaining maximization problems for other variables */
+      for (i = 1; i < num_cols; i++) {
+         //Changing UB of previous variable if better bound found
+         if (-new_ub <= orig_ub[i-1] - etol) {
+            sym_set_col_upper(env, i-1, -new_ub);
+            orig_ub[i-1] = -new_ub;
+            total_bound_changes++;
+         }
+         //Changing objective function relative to previous objective function
+         sym_set_obj_coeff(env, i-1, 0);
+         sym_set_obj_coeff(env, i, -1);
+         //Now, solve the problem and get useful information
+         sym_set_warm_start(env, ws);
+
+         sym_warm_solve(env);
+         sym_get_obj_val(env, &new_ub);
+      }
+      //Changing UB of last variable if better bound found
+      if (-new_ub <= orig_ub[i-1] - etol) {
+         sym_set_col_upper(env, i-1, -new_ub);
+         orig_ub[i-1] = -new_ub;
+         total_bound_changes++;
+      }
+      printf("\nMAIN: Done solving all min/max bounding problems in refinement %d\n\n", j);
+
+      if (total_bound_changes >= threshold_bound_changes) {
+         //Reset total_bound_changes
+         total_bound_changes = 0;
+
+         //Changing objective function back to minimizing first coefficient
+         sym_set_obj_coeff(env, i-1, 0);
+         sym_set_obj_coeff(env, 0, 1);
+         //Now, solve the problem and get useful information
+         sym_set_warm_start(env, ws);
+
+         sym_warm_solve(env);
+         sym_get_obj_val(env, &new_lb);
+      } else {
+         break;
+      }
+   }
+
+   FREE(ws);
+   sym_close_environment(env);
+}
+
 
 #endif

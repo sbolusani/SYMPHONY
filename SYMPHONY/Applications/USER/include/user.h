@@ -93,8 +93,12 @@ typedef struct USER_PROBLEM{
 
 int user_read_data PROTO((user_problem *prob, char *infile));
 int user_load_problem PROTO((sym_environment *env, user_problem *prob));
-int user_read_aux_data (user_problem *prob, char *infile);
-int user_load_bilevel_problem (sym_environment *env, user_problem *prob);
-int user_rearrange_mat_vec (user_problem *prob);
+int user_read_aux_data PROTO((user_problem *prob, char *infile));
+int user_generate_bilevel_problem PROTO((sym_environment *env, user_problem *prob));
+int user_rearrange_mat_vec PROTO((user_problem *prob));
+int user_preprocess_single_level_prob PROTO((user_problem *prob));
+int user_orig_col_bound_tightening PROTO((user_problem *prob));
+int user_preprocess_bilevel_prob PROTO((user_problem *prob));
+int user_col_bound_tightening PROTO((user_problem *prob));
 
 #endif
