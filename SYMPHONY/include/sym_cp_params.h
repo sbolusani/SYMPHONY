@@ -33,6 +33,7 @@ typedef struct CP_PARAMS{
    int     touches_until_deletion;
    int     min_to_delete;
    int     check_which;
+   int     use_symphony_application; //Suresh
 }cp_params;
 
 #endif

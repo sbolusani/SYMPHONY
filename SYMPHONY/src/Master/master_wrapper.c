@@ -40,11 +40,11 @@ int initialize_u(sym_environment *env)
 {
    sym_set_defaults(env);
 
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_initialize(&env->user) );
-#else
-   env->user = NULL;
-#endif   
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_initialize(&env->user) );
+   } else {
+      env->user = NULL;
+   }
 
    env->mip = (MIPdesc *) calloc(1, sizeof(MIPdesc));
 
@@ -60,11 +60,11 @@ int readparams_u(sym_environment *env, int argc, char **argv)
 
    parse_command_line(env, argc, argv);
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_readparams(env->user, env->par.param_file, argc, argv);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (env->par.use_symphony_application) {
+      user_res = user_readparams(env->user, env->par.param_file, argc, argv);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch(user_res){
 
@@ -147,11 +147,12 @@ int io_u(sym_environment *env)
 {
    int err, user_res;
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_io(env->user);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   //TODO: Suresh: check if correct from OsiSymSolverInterface as well.
+   if (env->par.use_symphony_application) {
+      user_res = user_io(env->user);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch( user_res ){
 
@@ -234,10 +235,11 @@ int init_draw_graph_u(sym_environment *env)
       send_msg(env->dg_tid, DG_DATA);
       freebuf(s_bufid);
 
-#ifdef USE_SYM_APPLICATION
-      if (env->dg_tid)
-	 CALL_USER_FUNCTION( user_init_draw_graph(env->user, env->dg_tid) );
-#endif
+      //TODO: Suresh: issue due to sym_explicit_load_problem call from master.c
+      if (env->par.use_symphony_application) {
+         if (env->dg_tid)
+            CALL_USER_FUNCTION( user_init_draw_graph(env->user, env->dg_tid) );
+      }
    }
 
    return(FUNCTION_TERMINATED_NORMALLY);
@@ -250,9 +252,10 @@ int start_heurs_u(sym_environment *env)
    double ub = env->has_ub ? env->ub : -MAXDOUBLE;
    double ub_estimate = env->has_ub_estimate ? env->ub_estimate : -MAXDOUBLE;
 
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_start_heurs(env->user, &ub, &ub_estimate) );
-#endif
+   //TODO: Suresh: issue due to sym_find_initial_bounds call from OsiSymSolverInterface??
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_start_heurs(env->user, &ub, &ub_estimate) );
+   }
 
    if (!env->has_ub){
       if (ub > -MAXDOUBLE){
@@ -297,17 +300,19 @@ int initialize_root_node_u(sym_environment *env)
    node_desc *root = env->rootdesc = (node_desc *) calloc(1,sizeof(node_desc));
    
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_initialize_root_node(env->user, &base->varnum,
-					&base->userind,
-					&base->cutnum, &root->uind.size,
-					&root->uind.list, &env->mip->obj_sense,
-					&env->mip->obj_offset, 
-					&env->mip->colname,
-					env->par.tm_par.colgen_strat);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   //TODO: Suresh: issue due to both calls to initialize_root_node_u function!!
+   if (env->par.use_symphony_application) {
+      user_res = user_initialize_root_node(env->user, &base->varnum,
+					   &base->userind,
+					   &base->cutnum, &root->uind.size,
+					   &root->uind.list,
+                                           &env->mip->obj_sense,
+					   &env->mip->obj_offset, 
+					   &env->mip->colname,
+					   env->par.tm_par.colgen_strat);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch (user_res){ 
       
@@ -436,13 +441,13 @@ int receive_feasible_solution_u(sym_environment *env, int msgtag)
       /* A feasible solution has been found in the LP process, and
        * it was packed by the user */
 
-#ifdef USE_SYM_APPLICATION
-      CALL_USER_FUNCTION( user_receive_feasible_solution(env->user, msgtag,
-							 env->best_sol.objval,
-							 env->best_sol.xlength,
-							 env->best_sol.xind,
-							 env->best_sol.xval) );
-#endif
+      if (env->par.use_symphony_application) {
+         CALL_USER_FUNCTION( user_receive_feasible_solution(env->user, msgtag,
+                  env->best_sol.objval,
+                  env->best_sol.xlength,
+                  env->best_sol.xind,
+                  env->best_sol.xval) );
+      }
       break;
    }
 
@@ -486,11 +491,11 @@ int send_lp_data_u(sym_environment *env, int sender)
       tm->lpp[i]->mip = env->mip;
    }
 
-#ifdef USE_SYM_APPLICATION
-   for (i = 0; i < tm->par.max_active_nodes; i ++){
-      CALL_USER_FUNCTION( user_send_lp_data(env->user, &(tm->lpp[i]->user)) );
+   if (env->par.use_symphony_application) {
+      for (i = 0; i < tm->par.max_active_nodes; i ++){
+         CALL_USER_FUNCTION( user_send_lp_data(env->user, &(tm->lpp[i]->user)) );
+      }
    }
-#endif
 
 #else   
    int s_bufid;
@@ -552,9 +557,9 @@ int send_lp_data_u(sym_environment *env, int sender)
       char has_desc = FALSE;
       send_char_array(&has_desc, 1);
    }
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_send_lp_data(env->user, NULL) );
-#endif
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_send_lp_data(env->user, NULL) );
+   }
    send_msg(sender, LP_DATA);
    freebuf(s_bufid);
 #endif
@@ -578,21 +583,21 @@ int send_cg_data_u(sym_environment *env, int sender)
       
       tm->cgp[i]->draw_graph = env->dg_tid;
    }
-#ifdef USE_SYM_APPLICATION      
-   for (i = 0; i < tm->par.max_active_nodes; i++){
-      CALL_USER_FUNCTION( user_send_cg_data(env->user,
-					    &(tm->lpp[i]->cgp->user)) );
+   if (env->par.use_symphony_application) {
+      for (i = 0; i < tm->par.max_active_nodes; i++){
+         CALL_USER_FUNCTION( user_send_cg_data(env->user,
+                  &(tm->lpp[i]->cgp->user)) );
+      }
    }
-#endif
 #else
    int s_bufid;
 
    s_bufid = init_send(DataInPlace);
    send_char_array((char *)(&env->par.cg_par), sizeof(cg_params));
    send_int_array(&env->dg_tid, 1);
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_send_cg_data(env->user, NULL) );
-#endif
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_send_cg_data(env->user, NULL) );
+   }
    send_msg(sender, CG_DATA);
    freebuf(s_bufid);
 #endif
@@ -612,18 +617,18 @@ int send_cp_data_u(sym_environment *env, int sender)
    for (i = 0; i < env->par.tm_par.max_cp_num; i++){
       tm->cpp[i] = (cut_pool *) calloc(1, sizeof(cut_pool));
       tm->cpp[i]->par = env->par.cp_par;
-#ifdef USE_SYM_APPLICATION
-      CALL_USER_FUNCTION( user_send_cp_data(env->user, &env->tm->cpp[i]->user) );
-#endif
+      if (env->par.use_symphony_application) {
+         CALL_USER_FUNCTION( user_send_cp_data(env->user, &env->tm->cpp[i]->user) );
+      }
    }
 #else
    int s_bufid;
 
    s_bufid = init_send(DataInPlace);
    send_char_array((char *)(&env->par.cp_par), sizeof(cp_params));
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_send_cp_data(env->user, NULL) );
-#endif
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_send_cp_data(env->user, NULL) );
+   }
    send_msg(sender, CP_DATA);
    freebuf(s_bufid);
 #endif
@@ -694,13 +699,13 @@ int display_solution_u(sym_environment *env, int thread_num)
    }
    qsort_id(sol.xind, sol.xval, sol.xlength);
 
-#ifdef USE_SYM_APPLICATION   
-   user_res = user_display_solution(env->user, sol.lpetol, sol.xlength,
-				    sol.xind, sol.xval, sol.objval);
-   
-#else
-   user_res = USER_DEFAULT;
-#endif
+   //TODO: Suresh: issue due to call from sym_find_initial_bounds??
+   if (env->par.use_symphony_application) {
+      user_res = user_display_solution(env->user, sol.lpetol, sol.xlength,
+				       sol.xind, sol.xval, sol.objval);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    if (env->par.verbosity > -1){
       switch(user_res){
@@ -765,9 +770,9 @@ int display_solution_u(sym_environment *env, int thread_num)
 
 int process_own_messages_u(sym_environment *env, int msgtag)
 {
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_process_own_messages(env->user, msgtag) );
-#endif
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_process_own_messages(env->user, msgtag) );
+   }
    return(FUNCTION_TERMINATED_NORMALLY);
 }
 
@@ -775,9 +780,9 @@ int process_own_messages_u(sym_environment *env, int msgtag)
 
 int free_master_u(sym_environment *env)
 {
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_free_master(&env->user) );
-#endif
+   if (env->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_free_master(&env->user) );
+   }
 
    free_master(env);
    

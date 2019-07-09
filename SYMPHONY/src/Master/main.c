@@ -124,6 +124,7 @@ COMMAND parameter_commands[] = {
   { "prep_level" },
   { "tighten_root_bounds" },
   { "limit_strong_branching_time" },
+  { "use_symphony_application" },
   { "back" },
   { "quit" },
   { "exit" },
@@ -683,6 +684,7 @@ int sym_help(const char *line)
 	   "prep_level                         : pre-processing level\n\n"
 	   "tighten_root_bounds                : whether to tighten root bounds \n\n"
 	   "limit_strong_branching_time        : whether to limit time spent in strong branching \n\n"
+	   "use_symphony_application           : whether to use a custom application (default: 1)\n\n"
 	   "back                               : leave this menu\n"
 	   "quit/exit                          : leave the optimizer\n\n");
 					    

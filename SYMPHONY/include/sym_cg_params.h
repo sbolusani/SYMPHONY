@@ -19,6 +19,7 @@
 typedef struct CG_PARAMS{
    int     verbosity;
    int     do_findcuts;
+   int     use_symphony_application; //Suresh
 }cg_params;
 
 #endif

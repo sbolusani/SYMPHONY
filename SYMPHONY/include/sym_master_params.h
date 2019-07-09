@@ -59,6 +59,9 @@ typedef struct PARAMS{
    char       test_dir[MAX_FILE_NAME_LENGTH +1];  /* Test files directory */
    double     obj_offset;
 
+   int        use_symphony_application; /* Whether to use SYMPHONY custom
+                                           application */
+
    /* Multi-criteria parameters */
    int        multi_criteria;
    int        mc_search_order;

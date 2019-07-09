@@ -85,7 +85,7 @@ typedef struct SYM_ENVIRONMENT{
 /*=================== Master I/O functions (readparams.c) ===================*/
 /*===========================================================================*/
 
-void usage PROTO((void));
+void usage PROTO((sym_environment *env));
 void version PROTO((void));
 int parse_command_line PROTO((sym_environment *env, int argc, char **argv));
 void read_string PROTO((char *target, char *line, int maxlen));

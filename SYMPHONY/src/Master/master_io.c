@@ -34,31 +34,21 @@
 
 /*===========================================================================*/
 
-void usage(void)
+void usage(sym_environment *env)
 {
-#ifdef USE_SYM_APPLICATION
-   printf("Generic switches:\n\n");
-   printf("app_name [ -f parameter_file_name ] \n\t"
-#else
-   printf("symphony [ -FL file ] [ -f parameter_file_name ] \n\t"
-#endif
-	  "[ -hd ] [-a 0/1] [-b 0/1 ] [-s cands] [-l 0/1] [ -q 0/1 ] [ -r 0/1]\n\t"
+   if (env->par.use_symphony_application) {
+      printf("Generic switches:\n\n");
+      printf("app_name [ -f parameter_file_name ] \n\t");
+   } else {
+      printf("symphony [ -FL file ] [ -f parameter_file_name ] \n\t");
+   }
+   printf("[ -hd ] [-a 0/1] [-b 0/1 ] [-s cands] [-l 0/1] [ -q 0/1 ] [ -r 0/1]\n\t"
 	  "[-j 0/1 ] [ -e n ] [ -i iters ] [ -t time ] [ -g gap ] [ -n nodes ]\n\t"
           "[ -u ub ] [ -p procs ] [ -k rule ] [ -v level ] [ -c rule ]\n\t"
 	  "[ -m max ] [ -z n ] [-o tree_out_file] [-w 0/1]\n\t"
 	  "\n\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n"
 	  "\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n"
-	  "\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n"
-#ifndef USE_SYM_APPLICATION
-	  "\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t\n\n",
-	  "-F model: model should be read in from file 'model'",
-	  "          (MPS format is assumed unless -D is also present)",
-	  "-L model: LP format model should be read in from file 'model'",
-	  "-D data: model is in AMPL format and data is in file 'data'",
-	  "-T dir: run test with MIPLIB3 models",
-#else
-	  "\n\n",
-#endif	  
+	  "\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n",
 	  "-h: help",
 	  "-f file: read parameters from parameter file 'file'",
 	  "-d: stop at first feasible solution",
@@ -83,14 +73,24 @@ void usage(void)
 	  "-m max: allow a max of 'max' cuts to enter per iteration",
 	  "-z n: set diving threshold to 'n'",
 	  "-o file: output vbc-like tree information to file 'file'");
-#ifdef USE_SYM_APPLICATION
-   printf("Application-specific switches:\n\n");
-   printf("app_name [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t\n\n",
-	  "-H: help (solver-specific switches)",
-	  "-F model: model should be read in from file 'model'");
-   user_usage();
-#else
-#endif   
+   if (!env->par.use_symphony_application) {
+      printf("\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t\n\n",
+	  "-F model: model should be read in from file 'model'",
+	  "          (MPS format is assumed unless -D is also present)",
+	  "-L model: LP format model should be read in from file 'model'",
+	  "-D data: model is in AMPL format and data is in file 'data'",
+	  "-T dir: run test with MIPLIB3 models");
+   } else {
+      printf("\n\n");
+   }
+
+   if (env->par.use_symphony_application) {
+      printf("Application-specific switches:\n\n");
+      printf("app_name [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t\n\n",
+	     "-H: help (solver-specific switches)",
+	     "-F model: model should be read in from file 'model'");
+      user_usage();
+   }
 }
 
 /*===========================================================================*/
@@ -112,7 +112,7 @@ int parse_command_line(sym_environment *env, int argc, char **argv)
    //dg_params *dg_par = &env->par.dg_par;
 
    if (argc < 2){
-      usage();
+      usage(env);
       exit(0);
    }
    
@@ -392,7 +392,7 @@ int parse_command_line(sym_environment *env, int argc, char **argv)
 	    exit(0);
 	 }
 	 if (!strcmp(argv[i], "--help")){
-	    usage();
+	    usage(env);
 	    exit(0);
 	 }
 	 if (!strcmp(argv[i], "--args")){
@@ -408,19 +408,19 @@ int parse_command_line(sym_environment *env, int argc, char **argv)
 	 }
 	 break;
        case 'h':
-	 usage();
+	 usage(env);
 	 exit(0);
        case 'H':
-#ifdef USE_SYM_APPLICATION
-	  user_usage();
-#else
-	  printf("master [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\n",
-		 "-H: help (solver-specific switches)",
-		 "-F model: model should be read in from file 'model'",
-		 "          (MPS format is assumed unless -D is also present)",
-		 "-L model: LP format model should be read in from file 'model'",
-		 "-D data: model is in AMPL format and data is in file 'data'");
-#endif 
+         if (env->par.use_symphony_application) {
+	    user_usage();
+         } else {
+	    printf("master [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\n",
+		   "-H: help (solver-specific switches)",
+		   "-F model: model should be read in from file 'model'",
+		   "          (MPS format is assumed unless -D is also present)",
+		   "-L model: LP format model should be read in from file 'model'",
+		   "-D data: model is in AMPL format and data is in file 'data'");
+         }
 	  exit(0);
        case 'a':
 	 if (i < argc - 1){

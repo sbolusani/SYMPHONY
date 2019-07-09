@@ -249,6 +249,7 @@ int sym_set_defaults(sym_environment *env)
    env->par.mc_warm_start_rule = MC_WS_UTOPIA_FIRST;
    env->par.trim_warm_tree = FALSE;
    env->par.test = FALSE;
+   env->par.use_symphony_application = TRUE;
    /************************** treemanager defaults **************************/
    tm_par->verbosity = 0;
    tm_par->granularity = 1e-7;
@@ -316,6 +317,7 @@ int sym_set_defaults(sym_environment *env)
    lp_par->is_recourse_prob = 0; //Anahita
    lp_par->verbosity = 0;
    lp_par->debug_lp = FALSE;
+   lp_par->use_symphony_application = TRUE; //Suresh
    lp_par->granularity = tm_par->granularity;
    lp_par->use_cg = tm_par->use_cg;
    lp_par->set_obj_upper_lim = TRUE;
@@ -332,9 +334,9 @@ int sym_set_defaults(sym_environment *env)
 #ifdef _OPENMP
    lp_par->should_reuse_lp = FALSE; /* see header file for description */
 #endif
-#ifdef USE_SYM_APPLICATION
-   lp_par->should_reuse_lp = FALSE; /* see header file for description */
-#endif
+   if (env->par.use_symphony_application) {
+      lp_par->should_reuse_lp = FALSE; /* see header file for description */
+   }
    lp_par->try_to_recover_from_error = TRUE;
    lp_par->problem_type = ZERO_ONE_PROBLEM;
    lp_par->keep_description_of_pruned = tm_par->keep_description_of_pruned;
@@ -540,11 +542,11 @@ int sym_set_defaults(sym_environment *env)
    lp_par->rs_dive_level = 2; 
    
    /* local branching */
-#ifdef USE_SYM_APPLICATION
-   lp_par->lb_enabled   = FALSE;
-#else
-   lp_par->lb_enabled   = TRUE;
-#endif   
+   if (env->par.use_symphony_application) {
+      lp_par->lb_enabled   = FALSE;
+   } else {
+      lp_par->lb_enabled   = TRUE;
+   }
    lp_par->lb_frequency   = 10;
    lp_par->lb_min_gap = 1.0;
    lp_par->lb_search_k = 10;
@@ -594,6 +596,7 @@ int sym_set_defaults(sym_environment *env)
    /************************** cut_gen defaults *****************************/
    cg_par->verbosity = 0;
    cg_par->do_findcuts = TRUE;
+   cg_par->use_symphony_application = TRUE; //Suresh
 
    /************************** cutpool defaults ******************************/
    cp_par->verbosity = 0;
@@ -607,6 +610,7 @@ int sym_set_defaults(sym_environment *env)
    cp_par->touches_until_deletion = 10;
    cp_par->min_to_delete = 1000;
    cp_par->check_which = CHECK_ALL_CUTS;
+   cp_par->use_symphony_application = TRUE; //Suresh
 
    /********************** draw_graph defaults  ******************************/
    strcpy(dg_par->source_path, ".");
@@ -630,6 +634,7 @@ int sym_set_defaults(sym_environment *env)
 	  "-adobe-helvetica-bold-r-normal--11-80-*-*-*-*-*-*");
    strcpy(dg_par->edgeweight_font,
 	  "-adobe-helvetica-bold-r-normal--11-80-*-*-*-*-*-*");
+   dg_par->use_symphony_application = TRUE; //Suresh
 
    /********************* preprocessor defaults ******************************/
    prep_par->level = 5;
@@ -1017,14 +1022,14 @@ int sym_solve(sym_environment *env)
       int feas_sol_size;
       int *feas_sol;
 
-#ifdef USE_SYM_APPLICATION
-      if (user_send_feas_sol(env->user, &feas_sol_size, &feas_sol)==USER_NO_PP){
-         send_int_array(&feas_sol_size, 1);
-         if (feas_sol_size){
-            send_int_array(feas_sol, feas_sol_size);
+      if (env->par.use_symphony_application) {
+         if (user_send_feas_sol(env->user, &feas_sol_size, &feas_sol)==USER_NO_PP){
+            send_int_array(&feas_sol_size, 1);
+            if (feas_sol_size){
+               send_int_array(feas_sol, feas_sol_size);
+            }
          }
       }
-#endif
    }
 #endif   
    send_msg(env->tm_tid, TM_DATA);
@@ -1310,13 +1315,13 @@ int sym_solve(sym_environment *env)
    {
       int feas_sol_size;
       int *feas_sol;
-#ifdef USE_SYM_APPLICATION      
-      if (user_send_feas_sol(env->user,&feas_sol_size,&feas_sol)==USER_NO_PP){
-         tm->feas_sol_size = feas_sol_size;
-         tm->feas_sol = (int *) calloc (tm->feas_sol_size, sizeof(int));
-         memcpy((char *)tm->feas_sol, (char *)feas_sol, feas_sol_size * ISIZE);
+      if (env->par.use_symphony_application) {
+         if (user_send_feas_sol(env->user,&feas_sol_size,&feas_sol)==USER_NO_PP){
+            tm->feas_sol_size = feas_sol_size;
+            tm->feas_sol = (int *) calloc (tm->feas_sol_size, sizeof(int));
+            memcpy((char *)tm->feas_sol, (char *)feas_sol, feas_sol_size * ISIZE);
+         }
       }
-#endif
    }
 #endif
 #endif   
@@ -1706,16 +1711,14 @@ int sym_solve(sym_environment *env)
 #endif
 
 
-#ifndef USE_SYM_APPLICATION
-
-   if(env->par.prep_par.level > 0){
-      if(env->orig_mip){
-         env->mip = env->orig_mip;
-         env->orig_mip = 0;
+   if (!env->par.use_symphony_application) {
+      if(env->par.prep_par.level > 0){
+         if(env->orig_mip){
+            env->mip = env->orig_mip;
+            env->orig_mip = 0;
+         }
       }
    }
-
-#endif
 
    env->has_ub = FALSE;
    env->ub = 0.0;
@@ -1918,18 +1921,18 @@ int sym_warm_solve(sym_environment *env)
                }
             }
 
-#ifdef USE_SYM_APPLICATION 
-            cut_data * cut;
-            if(change_type == COLS_ADDED || change_type == RHS_CHANGED){
-               for(i = 0; i < env->warm_start->cut_num; i++){
-                  cut = env->warm_start->cuts[i];
-                  user_ws_update_cuts(env->user, &(cut->size), &(cut->coef), 
-                        &(cut->rhs), &(cut->sense), cut->type, 
-                        env->mip->new_col_num,  
-                        change_type);
+            if (env->par.use_symphony_application) {
+               cut_data * cut;
+               if(change_type == COLS_ADDED || change_type == RHS_CHANGED){
+                  for(i = 0; i < env->warm_start->cut_num; i++){
+                     cut = env->warm_start->cuts[i];
+                     user_ws_update_cuts(env->user, &(cut->size), &(cut->coef), 
+                           &(cut->rhs), &(cut->sense), cut->type, 
+                           env->mip->new_col_num,  
+                           change_type);
+                  }
                }
             }
-#endif	    
             env->warm_start->trim_tree = DO_NOT_TRIM;		  	    
             env->mip->change_num = 0;
             env->mip->var_type_modified = FALSE;
@@ -2722,11 +2725,11 @@ int sym_create_permanent_cut_pools(sym_environment *env, int * cp_num)
       for (i = 0; i < env->par.tm_par.max_cp_num; i++){
 	 env->cp[i] = (cut_pool *) calloc(1, sizeof(cut_pool));
 	 env->cp[i]->par = env->par.cp_par;
-#ifdef USE_SYM_APPLICATION
-	 CALL_USER_FUNCTION( user_send_cp_data(env->user, &env->cp[i]->user) );
-#else
-	 env->cp[i]->user = env->user;
-#endif
+         if (env->par.use_symphony_application) {
+            CALL_USER_FUNCTION( user_send_cp_data(env->user, &env->cp[i]->user) );
+         } else {
+            env->cp[i]->user = env->user;
+         }
       }
       *cp_num = env->par.tm_par.max_cp_num;
       return(FUNCTION_TERMINATED_NORMALLY);

@@ -462,118 +462,6 @@ libSym_la_LIBADD = $(SYMPHONYLIB_LIBS) $(SYM_OPENMP_LIBS)
 endif
 
 ########################################################################
-#                        symphony program                              #
-########################################################################
-
-EXTRA_PROGRAMS = symphony symphony_m symphony_m_tm symphony_m_tm_lp \
-	symphony_m_tm_cp \
-	symphony_m_tm_lp_cg symphony_m_tm_lp_cg_cp symphony_cp symphony_lp \
-	symphony_lp_cg symphony_lp_cg_cp symphony_tm symphony_tm_cp \
-	symphony_tm_lp 	symphony_tm_lp_cg symphony_tm_lp_cg_cp 
-
-# # # Name of the executable compiled in this directory.  We want it to be
-# # # installed in the 'bin' directory
-
-bin_PROGRAMS = $(WHATTOMAKEBINS)
-
-symphony_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_DEPENDENCIES = $(SYMLDADD) libSym.la
-symphony_CPPFLAGS = $(SYMCPPFLAGS)
-symphony_LDADD = libSym.la $(LDADD) $(ADDLIBS)
-symphony_DEPENDENCIES = libSym.la $(DEPENDENCIES)
-symphony_LINK = $(SYMLINK)
-
-symphony_m_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_m_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
-symphony_m_CPPFLAGS = $(PCPPFLAGS)
-symphony_m_LDADD = libSym$(MASTEREXT).la $(PLDADD)
-symphony_m_DEPENDENCIES = libSym$(MASTEREXT).la $(DEPENDENCIES)
-
-symphony_m_tm_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_m_tm_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
-symphony_m_tm_CPPFLAGS = $(PCPPFLAGS)
-symphony_m_tm_LDADD = libSym$(MASTEREXT).la $(PLDADD)
-symphony_m_tm_DEPENDENCIES = libSym$(MASTEREXT).la $(DEPENDENCIES)
-
-symphony_m_tm_lp_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_m_tm_lp_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
-symphony_m_tm_lp_CPPFLAGS = $(PCPPFLAGS)
-symphony_m_tm_lp_LDADD = libSym$(MASTEREXT).la libSym.la $(PLDADD)
-symphony_m_tm_lp_DEPENDENCIES = libSym$(MASTEREXT).la libSym.la $(DEPENDENCIES)
-
-symphony_m_tm_cp_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_m_tm_cp_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
-symphony_m_tm_cp_CPPFLAGS = $(PCPPFLAGS)
-symphony_m_tm_cp_LDADD = libSym$(MASTEREXT).la $(PLDADD)
-symphony_m_tm_cp_DEPENDENCIES = libSym$(MASTEREXT).la $(DEPENDENCIES)
-
-symphony_m_tm_lp_cg_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_m_tm_lp_cg_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
-symphony_m_tm_lp_cg_CPPFLAGS = $(PCPPFLAGS)
-symphony_m_tm_lp_cg_LDADD = libSym$(MASTEREXT).la libSym.la $(PLDADD)
-symphony_m_tm_lp_cg_DEPENDENCIES = libSym$(MASTEREXT).la libSym.la $(DEPENDENCIES)
-
-symphony_m_tm_lp_cg_cp_SOURCES = $(MAIN_SRC) symphony.h
-#symphony_m_tm_lp_cg_cp_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
-symphony_m_tm_lp_cg_cp_CPPFLAGS = $(PCPPFLAGS)
-symphony_m_tm_lp_cg_cp_LDADD = libSym$(MASTEREXT).la libSym.la $(PLDADD)
-symphony_m_tm_lp_cg_cp_DEPENDENCIES = libSym$(MASTEREXT).la libSym.la $(DEPENDENCIES)
-
-symphony_tm_SOURCES =
-#symphony_tm_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
-symphony_tm_CPPFLAGS = $(PCPPFLAGS)
-symphony_tm_LDADD = libSym_tm$(TMEXT).la $(PLDADD)
-symphony_tm_DEPENDENCIES = libSym_tm$(TMEXT).la $(DEPENDENCIES)
-
-symphony_tm_lp_SOURCES =
-#symphony_tm_lp_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
-symphony_tm_lp_CPPFLAGS = $(PCPPFLAGS)
-symphony_tm_lp_LDADD = libSym_tm$(TMEXT).la libSym.la $(PLDADD)
-symphony_tm_lp_DEPENDENCIES = libSym_tm$(TMEXT).la libSym.la $(DEPENDENCIES)
-
-symphony_tm_cp_SOURCES =
-#symphony_tm_cp_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
-symphony_tm_cp_CPPFLAGS = $(PCPPFLAGS)
-symphony_tm_cp_LDADD = libSym_tm$(TMEXT).la $(PLDADD)
-symphony_tm_cp_DEPENDENCIES = libSym_tm$(TMEXT).la $(DEPENDENCIES)
-
-symphony_tm_lp_cg_SOURCES =
-#symphony_tm_lp_cg_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
-symphony_tm_lp_cg_CPPFLAGS = $(PCPPFLAGS)
-symphony_tm_lp_cg_LDADD = libSym_tm$(TMEXT).la libSym.la $(PLDADD)
-symphony_tm_lp_cg_DEPENDENCIES = libSym_tm$(TMEXT).la libSym.la $(DEPENDENCIES)
-
-symphony_tm_lp_cg_cp_SOURCES =
-#symphony_tm_lp_cg_cp_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
-symphony_tm_lp_cg_cp_CPPFLAGS = $(PCPPFLAGS)
-symphony_tm_lp_cg_cp_LDADD = libSym_tm$(TMEXT).la libSym.la $(PLDADD)
-symphony_tm_lp_cg_cp_DEPENDENCIES = libSym_tm$(TMEXT).la libSym.la $(DEPENDENCIES)
-
-symphony_cp_SOURCES =
-#symphony_cp_DEPENDENCIES = $(LDADD) libSym_cp.la
-symphony_cp_CPPFLAGS = $(PCPPFLAGS)
-symphony_cp_LDADD = libSym_cp.la $(PLDADD)
-symphony_cp_DEPENDENCIES = libSym_cp.la $(DEPENDENCIES)
-
-symphony_lp_SOURCES =
-#symphony_lp_DEPENDENCIES = $(LDADD) 
-symphony_lp_CPPFLAGS = $(PCPPFLAGS)
-symphony_lp_LDADD = libSym_lp$(LPEXT).la libSym.la $(PLDADD)
-symphony_lp_DEPENDENCIES = libSym_lp$(LPEXT).la libSym.la $(DEPENDENCIES)
-
-symphony_lp_cg_SOURCES =
-#symphony_lp_cg_DEPENDENCIES = $(LDADD) libSym_lp$(LPEXT).la 
-symphony_lp_cg__CPPFLAGS = $(PCPPFLAGS)
-symphony_lp_cg_LDADD = libSym_lp$(LPEXT).la libSym.la $(PLDADD)
-symphony_lp_cg_DEPENDENCIES = libSym_lp$(LPEXT).la libSym.la $(DEPENDENCIES)
-
-symphony_lp_cg_cp_SOURCES =
-#symphony_lp_cg_cp_DEPENDENCIES = $(LDADD) libSym_lp$(LPEXT).la
-symphony_lp_cg_cp__CPPFLAGS = $(PCPPFLAGS)
-symphony_lp_cg_cp_LDADD = libSym_lp$(LPEXT).la libSym.la $(PLDADD)
-symphony_lp_cg_cp_DEPENDENCIES = libSym_lp$(LPEXT).la libSym.la $(DEPENDENCIES)
-
-########################################################################
 #                Application Library                                   #    
 ########################################################################
 
@@ -668,6 +556,118 @@ libSymApplStubs_la_SOURCES = $(SYMINCFILES) $(USER_APPL_DIR)/include/user.h \
 libSymApplStubs_lp_la_LINK = $(STATIC_LINK)
 libSymApplStubs_la_LDFLAGS = $(LT_LDFLAGS) 
 libSymApplStubs_la_CPPFLAGS = $(APPLCPPFLAGS) 
+
+########################################################################
+#                        symphony program                              #
+########################################################################
+
+EXTRA_PROGRAMS = symphony symphony_m symphony_m_tm symphony_m_tm_lp \
+	symphony_m_tm_cp \
+	symphony_m_tm_lp_cg symphony_m_tm_lp_cg_cp symphony_cp symphony_lp \
+	symphony_lp_cg symphony_lp_cg_cp symphony_tm symphony_tm_cp \
+	symphony_tm_lp 	symphony_tm_lp_cg symphony_tm_lp_cg_cp 
+
+# # # Name of the executable compiled in this directory.  We want it to be
+# # # installed in the 'bin' directory
+
+bin_PROGRAMS = $(WHATTOMAKEBINS)
+
+symphony_SOURCES = $(MAIN_SRC) symphony.h $(libSymApplStubs_la_SOURCES)
+#symphony_DEPENDENCIES = $(SYMLDADD) libSym.la
+symphony_CPPFLAGS = $(APPLCPPFLAGS)
+symphony_LDADD = libSym.la $(LDADD) $(ADDLIBS)
+symphony_DEPENDENCIES = libSym.la $(DEPENDENCIES)
+symphony_LINK = $(SYMLINK)
+
+symphony_m_SOURCES = $(MAIN_SRC) symphony.h
+#symphony_m_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
+symphony_m_CPPFLAGS = $(PCPPFLAGS)
+symphony_m_LDADD = libSym$(MASTEREXT).la $(PLDADD)
+symphony_m_DEPENDENCIES = libSym$(MASTEREXT).la $(DEPENDENCIES)
+
+symphony_m_tm_SOURCES = $(MAIN_SRC) symphony.h
+#symphony_m_tm_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
+symphony_m_tm_CPPFLAGS = $(PCPPFLAGS)
+symphony_m_tm_LDADD = libSym$(MASTEREXT).la $(PLDADD)
+symphony_m_tm_DEPENDENCIES = libSym$(MASTEREXT).la $(DEPENDENCIES)
+
+symphony_m_tm_lp_SOURCES = $(MAIN_SRC) symphony.h
+#symphony_m_tm_lp_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
+symphony_m_tm_lp_CPPFLAGS = $(PCPPFLAGS)
+symphony_m_tm_lp_LDADD = libSym$(MASTEREXT).la libSym.la $(PLDADD)
+symphony_m_tm_lp_DEPENDENCIES = libSym$(MASTEREXT).la libSym.la $(DEPENDENCIES)
+
+symphony_m_tm_cp_SOURCES = $(MAIN_SRC) symphony.h
+#symphony_m_tm_cp_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
+symphony_m_tm_cp_CPPFLAGS = $(PCPPFLAGS)
+symphony_m_tm_cp_LDADD = libSym$(MASTEREXT).la $(PLDADD)
+symphony_m_tm_cp_DEPENDENCIES = libSym$(MASTEREXT).la $(DEPENDENCIES)
+
+symphony_m_tm_lp_cg_SOURCES = $(MAIN_SRC) symphony.h
+#symphony_m_tm_lp_cg_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
+symphony_m_tm_lp_cg_CPPFLAGS = $(PCPPFLAGS)
+symphony_m_tm_lp_cg_LDADD = libSym$(MASTEREXT).la libSym.la $(PLDADD)
+symphony_m_tm_lp_cg_DEPENDENCIES = libSym$(MASTEREXT).la libSym.la $(DEPENDENCIES)
+
+symphony_m_tm_lp_cg_cp_SOURCES = $(MAIN_SRC) symphony.h
+#symphony_m_tm_lp_cg_cp_DEPENDENCIES = $(LDADD) libSym$(MASTEREXT).la
+symphony_m_tm_lp_cg_cp_CPPFLAGS = $(PCPPFLAGS)
+symphony_m_tm_lp_cg_cp_LDADD = libSym$(MASTEREXT).la libSym.la $(PLDADD)
+symphony_m_tm_lp_cg_cp_DEPENDENCIES = libSym$(MASTEREXT).la libSym.la $(DEPENDENCIES)
+
+symphony_tm_SOURCES =
+#symphony_tm_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
+symphony_tm_CPPFLAGS = $(PCPPFLAGS)
+symphony_tm_LDADD = libSym_tm$(TMEXT).la $(PLDADD)
+symphony_tm_DEPENDENCIES = libSym_tm$(TMEXT).la $(DEPENDENCIES)
+
+symphony_tm_lp_SOURCES =
+#symphony_tm_lp_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
+symphony_tm_lp_CPPFLAGS = $(PCPPFLAGS)
+symphony_tm_lp_LDADD = libSym_tm$(TMEXT).la libSym.la $(PLDADD)
+symphony_tm_lp_DEPENDENCIES = libSym_tm$(TMEXT).la libSym.la $(DEPENDENCIES)
+
+symphony_tm_cp_SOURCES =
+#symphony_tm_cp_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
+symphony_tm_cp_CPPFLAGS = $(PCPPFLAGS)
+symphony_tm_cp_LDADD = libSym_tm$(TMEXT).la $(PLDADD)
+symphony_tm_cp_DEPENDENCIES = libSym_tm$(TMEXT).la $(DEPENDENCIES)
+
+symphony_tm_lp_cg_SOURCES =
+#symphony_tm_lp_cg_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
+symphony_tm_lp_cg_CPPFLAGS = $(PCPPFLAGS)
+symphony_tm_lp_cg_LDADD = libSym_tm$(TMEXT).la libSym.la $(PLDADD)
+symphony_tm_lp_cg_DEPENDENCIES = libSym_tm$(TMEXT).la libSym.la $(DEPENDENCIES)
+
+symphony_tm_lp_cg_cp_SOURCES =
+#symphony_tm_lp_cg_cp_DEPENDENCIES = $(LDADD) libSym_tm$(TMEXT).la
+symphony_tm_lp_cg_cp_CPPFLAGS = $(PCPPFLAGS)
+symphony_tm_lp_cg_cp_LDADD = libSym_tm$(TMEXT).la libSym.la $(PLDADD)
+symphony_tm_lp_cg_cp_DEPENDENCIES = libSym_tm$(TMEXT).la libSym.la $(DEPENDENCIES)
+
+symphony_cp_SOURCES =
+#symphony_cp_DEPENDENCIES = $(LDADD) libSym_cp.la
+symphony_cp_CPPFLAGS = $(PCPPFLAGS)
+symphony_cp_LDADD = libSym_cp.la $(PLDADD)
+symphony_cp_DEPENDENCIES = libSym_cp.la $(DEPENDENCIES)
+
+symphony_lp_SOURCES =
+#symphony_lp_DEPENDENCIES = $(LDADD) 
+symphony_lp_CPPFLAGS = $(PCPPFLAGS)
+symphony_lp_LDADD = libSym_lp$(LPEXT).la libSym.la $(PLDADD)
+symphony_lp_DEPENDENCIES = libSym_lp$(LPEXT).la libSym.la $(DEPENDENCIES)
+
+symphony_lp_cg_SOURCES =
+#symphony_lp_cg_DEPENDENCIES = $(LDADD) libSym_lp$(LPEXT).la 
+symphony_lp_cg__CPPFLAGS = $(PCPPFLAGS)
+symphony_lp_cg_LDADD = libSym_lp$(LPEXT).la libSym.la $(PLDADD)
+symphony_lp_cg_DEPENDENCIES = libSym_lp$(LPEXT).la libSym.la $(DEPENDENCIES)
+
+symphony_lp_cg_cp_SOURCES =
+#symphony_lp_cg_cp_DEPENDENCIES = $(LDADD) libSym_lp$(LPEXT).la
+symphony_lp_cg_cp__CPPFLAGS = $(PCPPFLAGS)
+symphony_lp_cg_cp_LDADD = libSym_lp$(LPEXT).la libSym.la $(PLDADD)
+symphony_lp_cg_cp_DEPENDENCIES = libSym_lp$(LPEXT).la libSym.la $(DEPENDENCIES)
 
 ########################################################################
 #                Other stuff                                           #    

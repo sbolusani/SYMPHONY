@@ -43,36 +43,43 @@ int receive_cg_data_u(cg_prob *p)
    receive_char_array((char *)&p->par, sizeof(cg_params));
    receive_int_array(&p->draw_graph, 1);
 
-#ifdef USE_SYM_APPLICATION 
-  switch( user_receive_cg_data(&p->user, p->draw_graph) ){
-    case USER_SUCCESS:
-    case USER_AND_PP:
-    case USER_NO_PP:
-      /* User function terminated without problems. No post-processing. */
-    case USER_DEFAULT:
+   if (p->par.use_symphony_application) {
+      switch( user_receive_cg_data(&p->user, p->draw_graph) ){
+         case USER_SUCCESS:
+         case USER_AND_PP:
+         case USER_NO_PP:
+            /* User function terminated without problems. No post-processing. */
+         case USER_DEFAULT:
+            freebuf(r_bufid);
+            return(TRUE);
+         case USER_ERROR:
+         default:
+            freebuf(r_bufid);
+            /* Unexpected return value. Do something!! */
+            return(FALSE);
+      }
+   } else {
       freebuf(r_bufid);
       return(TRUE);
-    case USER_ERROR:
-    default:
-      freebuf(r_bufid);
-      /* Unexpected return value. Do something!! */
-      return(FALSE);
    }
-#else
-  freebuf(r_bufid);
-  return(TRUE);
-#endif
 }
 
 /*===========================================================================*/
 
 int receive_lp_solution_cg_u(cg_prob *p)
 {
-#ifdef USE_SYM_APPLICATION
-   return(user_receive_lp_solution_cg(&p->user));
-#else
-   return(USER_DEFAULT);
-#endif
+   int r_bufid;
+   
+   r_bufid = receive_msg(p->master, CG_DATA);
+   receive_char_array((char *)&p->par, sizeof(cg_params));
+
+   if (p->par.use_symphony_application) {
+      freebuf(r_bufid);
+      return(user_receive_lp_solution_cg(&p->user));
+   } else {
+      freebuf(r_bufid);
+      return(USER_DEFAULT);
+   }
 }
 
 /*===========================================================================*/
@@ -81,15 +88,15 @@ int find_cuts_u(cg_prob *p, LPdata *lp_data, int *num_cuts)
 {
    int tmp = p->cuts_to_add_num; 
    
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_find_cuts(p->user, p->cur_sol.xlength,
-				      p->cur_sol.xiter_num, p->cur_sol.xlevel,
-				      p->cur_sol.xindex, p->cur_sol.objval,
-				      p->cur_sol.xind, p->cur_sol.xval,
-				      p->ub, p->cur_sol.lpetol,
-				      &p->cuts_to_add_num, &p->cuts_to_add_size,
-				      &p->cuts_to_add) );
-#endif
+   if (p->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_find_cuts(p->user, p->cur_sol.xlength,
+				         p->cur_sol.xiter_num, p->cur_sol.xlevel,
+				         p->cur_sol.xindex, p->cur_sol.objval,
+				         p->cur_sol.xind, p->cur_sol.xval,
+				         p->ub, p->cur_sol.lpetol,
+				         &p->cuts_to_add_num, &p->cuts_to_add_size,
+				         &p->cuts_to_add) );
+   }
 
    *num_cuts += p->cuts_to_add_num - tmp;
    
@@ -108,9 +115,9 @@ int free_cg_u(cg_prob *p)
    FREE(p->cur_sol.xval);
 #endif   
 
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_free_cg(&p->user) );
-#endif
+   if (p->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_free_cg(&p->user) );
+   }
    FREE(p);
 
    return(FUNCTION_TERMINATED_NORMALLY);
@@ -130,10 +137,8 @@ int check_validity_of_cut_u(cg_prob *p, cut_data *new_cut)
        return (FUNCTION_TERMINATED_NORMALLY);
 
     default:
-       {
-#ifdef USE_SYM_APPLICATION
-      CALL_USER_FUNCTION( user_check_validity_of_cut(p->user, new_cut) );
-#endif
+       if (p->par.use_symphony_application) {
+          CALL_USER_FUNCTION( user_check_validity_of_cut(p->user, new_cut) );
        }
    }
    return(FUNCTION_TERMINATED_NORMALLY);

@@ -103,6 +103,7 @@ typedef struct LP_PARAMS{
    int               find_first_feasible;
    double            time_limit;
    int               debug_lp;
+   int               use_symphony_application; //Suresh
 
    int               lp_data_mip_is_copied;
    /* TRUE: save the base model after root solve and then load it each time we

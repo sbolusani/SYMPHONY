@@ -194,9 +194,9 @@ int main(void)
 	   par->nodeweight_font, par->edgeweight_font);
 
    /* invoke user initialization */
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_initialize_dg(&dgp->user) );
-#endif
+   if (par->use_symphony_application) {
+      CALL_USER_FUNCTION( user_initialize_dg(&dgp->user) );
+   }
 
    while(TRUE){
 
@@ -206,7 +206,7 @@ int main(void)
 	 for ( i = 0; i < dgp->window_num; ){
 	    if ( ! dgp->windows[i]->wait_for_click ){
 	       spprint(write_to, "Igd_QuitWindow %u\n",dgp->windows[i]->id);
-	       free_window(&dgp->window_num, dgp->windows, i);
+	       free_window(&dgp->window_num, dgp->windows, i, par->use_symphony_application);
 	    }else{
 	       i++;
 	    }
@@ -255,7 +255,7 @@ int main(void)
 	       break;
 	    }
 	    spprint(write_to, "Igd_QuitWindow %u\n", id);
-	    free_window(&dgp->window_num, dgp->windows, i);
+	    free_window(&dgp->window_num, dgp->windows, i, par->use_symphony_application);
 	    break;
 
 	  case IGDTOI_QUIT_APPLICATION:
@@ -263,7 +263,7 @@ int main(void)
 	    for ( i = 0; i < dgp->window_num; ){
 	       if ( ! dgp->windows[i]->wait_for_click ){
 		  spprint(write_to, "Igd_QuitWindow %u\n",dgp->windows[i]->id);
-		  free_window(&dgp->window_num, dgp->windows, i);
+		  free_window(&dgp->window_num, dgp->windows, i, par->use_symphony_application);
 	       }else{
 		  i++;
 	       }
@@ -290,12 +290,12 @@ int main(void)
 	    win->text[win->text_length] = 0;
 
 	    /* invoke function that interprets the message */
-#ifdef USE_SYM_APPLICATION
-	    CALL_USER_FUNCTION( user_interpret_text(dgp->user,
-						    win->text_length,
-						    win->text,
-						    win->owner_tid) );
-#endif
+            if (par->use_symphony_application) {
+	       CALL_USER_FUNCTION( user_interpret_text(dgp->user,
+						       win->text_length,
+						       win->text,
+						       win->owner_tid) );
+            }
 	    break;
 
 	  case IGDTOI_REQUEST_GRAPH:
@@ -483,15 +483,15 @@ int main(void)
 	 switch ( msgtag ) {
 
 	  case CTOI_USER_MESSAGE:
-#ifdef USE_SYM_APPLICATION
-	    user_dg_process_message(win->user, win, write_to);
-#endif
+             if (par->use_symphony_application) {
+                user_dg_process_message(win->user, win, write_to);
+             }
 	    break;
 
 	  case CTOI_QUIT_WINDOW:
 	    /* delete this window */
 	    spprint(write_to, "Igd_QuitWindow %u\n", win->id);
-	    free_window(&dgp->window_num, dgp->windows, i);
+	    free_window(&dgp->window_num, dgp->windows, i, par->use_symphony_application);
 	    i--;
 	    break;
 
@@ -1410,7 +1410,8 @@ void display_graph_on_canvas(window *win, FILE *write_to)
  * Disassemble data structure windows[i].
 \*===========================================================================*/
 
-void free_window(int *pwindow_num, window **windows, int i)
+void free_window(int *pwindow_num, window **windows, int i,
+                 int use_symphony_application)
 {
    window *w = windows[i];
 
@@ -1419,11 +1420,11 @@ void free_window(int *pwindow_num, window **windows, int i)
    /* free the bufid fifo */
    FREE(w->buf.bufid);
    if (w->user){
-#ifdef USE_SYM_APPLICATION
-      user_dg_free_window(&w->user, w);
-#else
-      FREE(w->user);
-#endif
+      if (use_symphony_application) {
+         user_dg_free_window(&w->user, w);
+      } else {
+         FREE(w->user);
+      }
    }
    FREE(w);
 
@@ -1566,11 +1567,11 @@ window *init_dgwin(dg_prob *dgp, int sender, char *name, char *title)
       dgp->windows = (window **)
 	 realloc(dgp->windows, dgp->window_num * sizeof(window *));
    dgp->windows[dgp->window_num-1] = win;
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_dg_init_window(&win->user, win) );
-#else
-   win->user = NULL;
-#endif
+   if (dgp->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_dg_init_window(&win->user, win) );
+   } else {
+      win->user = NULL;
+   }
    return(win);
 }
 

@@ -138,22 +138,22 @@ int receive_lp_data_u(lp_prob *p)
       }
    }
 
-#ifdef USE_SYM_APPLICATION   
-   switch( user_receive_lp_data(&p->user)){
-    case USER_ERROR:
-      freebuf(r_bufid);
-      return(ERROR__USER);
-    case USER_SUCCESS:
-    case USER_AND_PP: 
-    case USER_NO_PP:
-      /* User function terminated without problems. No post-processing. */
-      break;
-    default:
-      freebuf(r_bufid);
-      /* Unexpected return value. Do something!! */
-      return(ERROR__USER);
+   if (p->par.use_symphony_application) {
+      switch( user_receive_lp_data(&p->user)){
+         case USER_ERROR:
+            freebuf(r_bufid);
+            return(ERROR__USER);
+         case USER_SUCCESS:
+         case USER_AND_PP: 
+         case USER_NO_PP:
+            /* User function terminated without problems. No post-processing. */
+            break;
+         default:
+            freebuf(r_bufid);
+            /* Unexpected return value. Do something!! */
+            return(ERROR__USER);
+      }
    }
-#endif
 
    return(FUNCTION_TERMINATED_NORMALLY);
 }
@@ -272,17 +272,17 @@ int create_subproblem_u(lp_prob *p)
       p->par.is_userind_in_order = FALSE;
    }
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_create_subproblem(p->user,
-         /* list of base and extra variables */
-         userind,
-         /* description of the LP relaxation to be filled out by the user */
-         lp_data_mip, 
-         /* max sizes (estimated by the user) */
-         &maxn, &maxm, &maxnz);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_create_subproblem(p->user,
+            /* list of base and extra variables */
+            userind,
+            /* description of the LP relaxation to be filled out by the user */
+            lp_data_mip, 
+            /* max sizes (estimated by the user) */
+            &maxn, &maxm, &maxnz);
+   } else {
+      user_res = USER_DEFAULT;
+   }
    switch (user_res){
 
       case USER_DEFAULT:
@@ -842,14 +842,14 @@ int is_feasible_u(lp_prob *p, char branching, char is_last_iter)
    heur_solution = p->lp_data->heur_solution;
    col_sol = p->lp_data->col_solution;
 
-#ifdef USE_SYM_APPLICATION
-   cnt = collect_nonzeros(p, lp_data->x, indices, values);
-   user_res = user_is_feasible(p->user, lpetol, cnt, indices, values,
-         &feasible, &true_objval, branching,
-         heur_solution);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      cnt = collect_nonzeros(p, lp_data->x, indices, values);
+      user_res = user_is_feasible(p->user, lpetol, cnt, indices, values,
+            &feasible, &true_objval, branching,
+            heur_solution);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch (user_res){
       case USER_ERROR: /* Error. Consider as feasibility not recognized. */
@@ -1381,11 +1381,11 @@ void send_feasible_solution_u(lp_prob *p, int xlevel, int xindex,
       send_int_array(xind, cnt);
       send_dbl_array(xval, cnt);
    }
-#ifdef USE_SYM_APPLICATION
-   user_res = user_send_feasible_solution(p->user, lpetol, cnt, xind, xval);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_send_feasible_solution(p->user, lpetol, cnt, xind, xval);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch (user_res){
     case USER_SUCCESS:
@@ -1432,11 +1432,11 @@ void display_lp_solution_u(lp_prob *p, int which_sol)
    number = collect_nonzeros(p, x, xind, xval);
 
    /* Invoke user written function. */
-#ifdef USE_SYM_APPLICATION
-   user_res = user_display_lp_solution(p->user, which_sol, number, xind, xval);
-#else
-   user_res = USER_DEFAULT;
-#endif   
+   if (p->par.use_symphony_application) {
+      user_res = user_display_lp_solution(p->user, which_sol, number, xind, xval);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch(user_res){
     case USER_ERROR:
@@ -1572,16 +1572,16 @@ int select_candidates_u(lp_prob *p, int *cuts, int *new_vars,
    }
 
    /* First decide if we are going to branch or not */
-#ifdef USE_SYM_APPLICATION
-   user_res = user_shall_we_branch(p->user, lp_data->lpetol, *cuts, j, 
-				   slacks_in_matrix, p->slack_cut_num, 
-				   p->slack_cuts, lp_data->n, lp_data->vars, 
-				   lp_data->x, lp_data->status, cand_num, 
-				   candidates, &action);
-   check_tailoff(p);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_shall_we_branch(p->user, lp_data->lpetol, *cuts, j, 
+            slacks_in_matrix, p->slack_cut_num, 
+            p->slack_cuts, lp_data->n, lp_data->vars, 
+            lp_data->x, lp_data->status, cand_num, 
+            candidates, &action);
+      check_tailoff(p);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch (user_res){
     case USER_SUCCESS:
@@ -1680,15 +1680,15 @@ int select_candidates_u(lp_prob *p, int *cuts, int *new_vars,
    // }
 
    /* OK, so we got to branch */
-#ifdef USE_SYM_APPLICATION
-   user_res = user_select_candidates(p->user, lp_data->lpetol, *cuts, j,
-				     slacks_in_matrix, p->slack_cut_num,
-				     p->slack_cuts, lp_data->n, lp_data->vars,
-				     lp_data->x, lp_data->status, cand_num,
-				     candidates, &action, p->bc_level);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_select_candidates(p->user, lp_data->lpetol, *cuts, j,
+				        slacks_in_matrix, p->slack_cut_num,
+				        p->slack_cuts, lp_data->n, lp_data->vars,
+				        lp_data->x, lp_data->status, cand_num,
+				        candidates, &action, p->bc_level);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    /* Get rid of any contsraint from slack_cuts which is listed in candidates
     * and rewrite the position of the CANDIDATE_CUT_IN_MATRIX ones */
@@ -1851,13 +1851,12 @@ int compare_candidates_u(lp_prob *p, double oldobjval,
    }
 
    /* Otherwise, first give the choice to the user */
-#ifdef USE_SYM_APPLICATION
-   user_res = user_compare_candidates(p->user, best, can, p->ub,
-         p->par.granularity, &i);
-
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_compare_candidates(p->user, best, can, p->ub,
+            p->par.granularity, &i);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch(user_res){
       case USER_SUCCESS:
@@ -1999,11 +1998,11 @@ int select_child_u(lp_prob *p, branch_obj *can, char *action)
       }
    }
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_select_child(p->user, p->ub, can, action);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_select_child(p->user, p->ub, can, action);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch(user_res){
       case USER_NO_PP:
@@ -2149,18 +2148,18 @@ void print_branch_stat_u(lp_prob *p, branch_obj *can, char *action)
    }
    printf("\n");
 
-#ifdef USE_SYM_APPLICATION
-   for (i = 0; i < can->child_num; i++) {
-      if (can->cdesc[i].type == CANDIDATE_VARIABLE){
-         user_print_branch_stat(p->user, can, NULL,
-               p->lp_data->n, p->lp_data->vars, action);
-      }else{
-         user_print_branch_stat(p->user, can,
-               p->lp_data->rows[can->cdesc[i].position].cut,
-               p->lp_data->n, p->lp_data->vars, action);
+   if (p->par.use_symphony_application) {
+      for (i = 0; i < can->child_num; i++) {
+         if (can->cdesc[i].type == CANDIDATE_VARIABLE){
+            user_print_branch_stat(p->user, can, NULL,
+                  p->lp_data->n, p->lp_data->vars, action);
+         }else{
+            user_print_branch_stat(p->user, can,
+                  p->lp_data->rows[can->cdesc[i].position].cut,
+                  p->lp_data->n, p->lp_data->vars, action);
+         }
       }
    }
-#endif
 }
 
 /*===========================================================================*/
@@ -2174,10 +2173,10 @@ void add_to_desc_u(lp_prob *p, node_desc *desc)
 {
    desc->desc_size = 0;
    desc->desc = NULL;
-#ifdef USE_SYM_APPLICATION
-   user_add_to_desc(p->user, &desc->desc_size,
-		    &desc->desc);
-#endif
+   if (p->par.use_symphony_application) {
+      user_add_to_desc(p->user, &desc->desc_size,
+		       &desc->desc);
+   }
 }
 
 /*===========================================================================*/
@@ -2188,11 +2187,11 @@ int same_cuts_u(lp_prob *p, waiting_row *wrow1, waiting_row *wrow2)
    int same_cuts = DIFFERENT_CUTS;
    cut_data *rcut1 = NULL, *rcut2 = NULL;
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_same_cuts(p->user, wrow1->cut, wrow2->cut, &same_cuts);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_same_cuts(p->user, wrow1->cut, wrow2->cut, &same_cuts);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch (user_res){
     case USER_SUCCESS:
@@ -2361,13 +2360,13 @@ void unpack_cuts_u(lp_prob *p, int from, int type,
 
    *new_row_num = 0;
       
-#ifdef USE_SYM_APPLICATION
-   user_res = user_unpack_cuts(p->user, from, type,
-			       lp_data->n, lp_data->vars,
-			       l, cuts, new_row_num, new_rows);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_unpack_cuts(p->user, from, type,
+			          lp_data->n, lp_data->vars,
+			          l, cuts, new_row_num, new_rows);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    for (i = 0; i < l; i++){
       if (cuts[i]){
@@ -2451,13 +2450,13 @@ int send_lp_solution_u(lp_prob *p, int tid)
 	 send_dbl_array(&p->ub, 1);
    }
    colind_sort_extra(p);
-#ifdef USE_SYM_APPLICATION
-   user_res = user_send_lp_solution(p->user, lp_data->n, lp_data->vars, x,
-				    tid == p->cut_gen ?
-				    LP_SOL_TO_CG : LP_SOL_TO_CP);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_send_lp_solution(p->user, lp_data->n, lp_data->vars, x,
+				       tid == p->cut_gen ?
+				       LP_SOL_TO_CG : LP_SOL_TO_CP);
+   } else {
+      user_res = USER_DEFAULT;
+   }
    
    switch (user_res){
     case USER_ERROR: /* Error. Consider as couldn't send to cut_gen, i.e.,
@@ -2513,12 +2512,12 @@ void logical_fixing_u(lp_prob *p)
    //memcpy(status, lpstatus, p->lp_data->n);
    memcpy(status, lpstatus, CSIZE*p->lp_data->n);
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_logical_fixing(p->user, p->lp_data->n, p->lp_data->vars,
-				  p->lp_data->x, status, &fixed_num);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_logical_fixing(p->user, p->lp_data->n, p->lp_data->vars,
+				     p->lp_data->x, status, &fixed_num);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch(user_res){
     case USER_SUCCESS:
@@ -2545,13 +2544,13 @@ int generate_column_u(lp_prob *p, int lpcutnum, cut_data **cuts,
 		      double *lb, double *ub)
 {
    int real_nextind = nextind;
-#ifdef USE_SYM_APPLICATION
-   CALL_USER_FUNCTION( user_generate_column(p->user, generate_what,
-					    p->lp_data->m - p->base.cutnum,
-					    cuts, prevind, nextind,
-					    &real_nextind, colval, colind,
-					    collen, obj, lb, ub) );
-#endif
+   if (p->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_generate_column(p->user, generate_what,
+					       p->lp_data->m - p->base.cutnum,
+					       cuts, prevind, nextind,
+					       &real_nextind, colval, colind,
+					       collen, obj, lb, ub) );
+   }
    return(real_nextind);
 }
 
@@ -2583,13 +2582,13 @@ int generate_cuts_in_lp_u(lp_prob *p, double *xx)
       lp_sol *cur_sol = &(p->cgp->cur_sol);
       double *xval = NULL, lpetol = 0;
 
-#ifdef USE_SYM_APPLICATION
-      user_res2 = user_send_lp_solution(p->user,
-            lp_data->n, lp_data->vars, x,
-            LP_SOL_WITHIN_LP);
-#else
-      user_res2 = USER_DEFAULT;
-#endif
+      if (p->par.use_symphony_application) {
+         user_res2 = user_send_lp_solution(p->user,
+               lp_data->n, lp_data->vars, x,
+               LP_SOL_WITHIN_LP);
+      } else {
+         user_res2 = USER_DEFAULT;
+      }
 
       if (user_res2 == USER_DEFAULT)
          user_res2 = p->par.pack_lp_solution_default;
@@ -2699,13 +2698,13 @@ int generate_cuts_in_lp_u(lp_prob *p, double *xx)
    }
 #endif
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_generate_cuts_in_lp(p->user, lp_data, lp_data->n,
-         lp_data->vars, x,
-         &new_row_num, &cuts);
-#else
-   user_res = GENERATE_CGL_CUTS;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_generate_cuts_in_lp(p->user, lp_data, lp_data->n,
+            lp_data->vars, x,
+            &new_row_num, &cuts);
+   } else {
+      user_res = GENERATE_CGL_CUTS;
+   }
 
    switch(user_res){
       case USER_ERROR:
@@ -2787,12 +2786,12 @@ void print_stat_on_cuts_added_u(lp_prob *p, int added_rows)
 {
    int user_res;
 
-#ifdef USE_SYM_APPLICATION
-   user_res = user_print_stat_on_cuts_added(p->user, added_rows,
-         p->waiting_rows);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_print_stat_on_cuts_added(p->user, added_rows,
+            p->waiting_rows);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch(user_res){
       case USER_ERROR:
@@ -2827,11 +2826,11 @@ void purge_waiting_rows_u(lp_prob *p)
 
    memset(delete_rows, 0, wrow_num);
 
-#ifdef USE_SYM_APPLICATION   
-   user_res = user_purge_waiting_rows(p->user, wrow_num, wrows, delete_rows);
-#else
-   user_res = USER_DEFAULT;
-#endif
+   if (p->par.use_symphony_application) {
+      user_res = user_purge_waiting_rows(p->user, wrow_num, wrows, delete_rows);
+   } else {
+      user_res = USER_DEFAULT;
+   }
 
    switch (user_res){
       case USER_ERROR: /* purge all */
@@ -2875,21 +2874,20 @@ void purge_waiting_rows_u(lp_prob *p)
 
 void free_prob_dependent_u(lp_prob *p)
 {
-
-#ifdef USE_SYM_APPLICATION
-   switch (user_free_lp(&p->user)){
-    case USER_ERROR:
-      /* SYMPHONY ignores error message */
-    case USER_SUCCESS: 
-    case USER_AND_PP:  
-    case USER_NO_PP:   
-      /* User function terminated without problems. No post-processing. */
-      return;
-    default:
-      /* Unexpected return value. Do something!! */
-      break;
+   if (p->par.use_symphony_application) {
+      switch (user_free_lp(&p->user)){
+         case USER_ERROR:
+            /* SYMPHONY ignores error message */
+         case USER_SUCCESS: 
+         case USER_AND_PP:  
+         case USER_NO_PP:   
+            /* User function terminated without problems. No post-processing. */
+            return;
+         default:
+            /* Unexpected return value. Do something!! */
+            break;
+      }
    }
-#endif
 }
 
 /*===========================================================================*/

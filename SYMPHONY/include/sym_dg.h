@@ -145,7 +145,8 @@ int find_edge PROTO((int edge_id, dg_graph *g));
 void compress_graph PROTO((dg_graph *g));
 void copy_window_structure PROTO((window *target_win, window *source_win));
 void display_graph_on_canvas PROTO((window *win, FILE *write_to));
-void free_window PROTO((int *pwindow_num, window **windows, int i));
+void free_window PROTO((int *pwindow_num, window **windows, int i,
+                        int use_symphony_application));
 void copy_win_desc_from_par PROTO((window *win, dg_params *par));
 void set_window_desc_pvm PROTO((int key, window *win));
 void wait_for_you_can_die PROTO((dg_prob *dgp, FILE *write_to));

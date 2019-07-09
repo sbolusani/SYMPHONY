@@ -1005,202 +1005,200 @@ void check_better_solution(sym_environment * env, bc_node *root, int delete_node
    int feasible = TRUE;
 
 
-#ifdef USE_SYM_APPLICATION
-   /* for now, just assume it is infeasible */
+   if (env->par.use_symphony_application) {
+      /* for now, just assume it is infeasible */
+   } else {
+      MIPdesc *mip = env->mip;
+      lp_sol *best_sol = &(env->warm_start->best_sol);
 
-#else
-   
-   MIPdesc *mip = env->mip;
-   lp_sol *best_sol = &(env->warm_start->best_sol);
 
-   
-   if(env->mip->var_type_modified == TRUE) {
-      for(i = root->sol_size-1; i >=0; i--){
-	 if(mip->is_int[root->sol_ind[i]]){
-	    valuesi = root->sol[i];
-	    if (valuesi-floor(valuesi) > lpetol &&
-		ceil(valuesi)-valuesi > lpetol){
-	       break;
-	    }
-	 }
+      if(env->mip->var_type_modified == TRUE) {
+         for(i = root->sol_size-1; i >=0; i--){
+            if(mip->is_int[root->sol_ind[i]]){
+               valuesi = root->sol[i];
+               if (valuesi-floor(valuesi) > lpetol &&
+                     ceil(valuesi)-valuesi > lpetol){
+                  break;
+               }
+            }
+         }
+         feasible = i < 0 ? TRUE : FALSE;
       }
-      feasible = i < 0 ? TRUE : FALSE;
-   }
 
-   if(feasible){
-      if(change_type == OBJ_COEFF_CHANGED || change_type == COLS_ADDED){
-	 if(!env->par.mc_warm_start){
-	    for(i = 0; i<root->sol_size; i++){
-	       upper_bound += mip->obj[root->sol_ind[i]] * root->sol[i];
-	    }	    	       
-	    if((env->warm_start->has_ub && 
-		upper_bound<env->warm_start->ub)||
-	       !env->warm_start->has_ub){
-	       
-	       if(!env->warm_start->has_ub){
-		  env->warm_start->has_ub = TRUE;
-		  best_sol->has_sol = TRUE;
-	       }
-	       
-	       env->warm_start->ub = upper_bound;
-	       best_sol->objval = upper_bound;
-	       new_solution = true;
-	    }
-	 
-	 } else {
-	    
-	    gamma = env->par.lp_par.mc_gamma;
-	    tau = env->par.lp_par.mc_tau;
-	    
-	    for(i = 0; i<root->sol_size; i++){
-	       obj[0] += mip->obj1[root->sol_ind[i]]*root->sol[i];
-	       obj[1] += mip->obj2[root->sol_ind[i]]*root->sol[i];
-	    }
-	    
-	    if(gamma != -1.0){
-	    objval = gamma*obj[0] + tau*obj[1];
-	    } else{
-	       objval = tau*obj[1];
-	    }
-	    if ((env->has_mc_ub &&  (objval < env->mc_ub - lpetol - 
-				     MAX(0, MIN(gamma, tau)))) ||
-		!env->has_mc_ub){
-	       
-	       if(!env->has_mc_ub){
-	       env->has_mc_ub = TRUE;
-	       env->warm_start->has_ub = TRUE;
-	       best_sol->has_sol = TRUE;
-	       }
-	       
-	       env->mc_ub = env->warm_start->ub = best_sol->objval = objval;
-	       env->obj[0] = obj[0];
-	       env->obj[1] = obj[1];
-	       new_solution = TRUE;
-	    }
-	 }    
-      }else if(change_type == RHS_CHANGED){
-	 
-	 colsol = (double*)calloc(env->mip->n, DSIZE);
-	 rowact = (double*) calloc(env->mip->m, DSIZE);
-	 matbeg = env->mip->matbeg;
-	 matval = env->mip->matval;
-	 matind = env->mip->matind;
-	 
-	 for(i = 0; i<root->sol_size; i++){
-	    upper_bound += mip->obj[root->sol_ind[i]] * root->sol[i];
-	    colsol[root->sol_ind[i]] = root->sol[i];
-	 }   
-	 
-	 for(i = 0; i < env->mip->n; i++){
-	    for(j = matbeg[i]; j<matbeg[i+1]; j++){
-	       rowact[matind[j]] += matval[j] * colsol[i];
-	    }
-	 }	 
-	 
-	 for(i = 0; i < env->mip->m; i++){
-	    switch(env->mip->sense[i]){
-	     case 'L': 
-		if (rowact[i] > env->mip->rhs[i] + lpetol)
-		   feasible = FALSE;
-		break;
-	     case 'G':
-		if (rowact[i] < env->mip->rhs[i] - lpetol)
-		   feasible = FALSE;
-		break;
-	     case 'E':
-		if (!((rowact[i] > env->mip->rhs[i] - lpetol) && 
-		      (rowact[i] < env->mip->rhs[i] + lpetol)))
-		   feasible = FALSE;
-		break;
-	     case 'R':
-		if (rowact[i] > env->mip->rhs[i] + lpetol || 
-		    rowact[i] < env->mip->rhs[i] - env->mip->rngval[i] - lpetol)
-		   feasible = FALSE;
-		break;
-	     case 'N':
-	     default:
-		break;
-	    }
-	    
-	    if (!feasible) 
-	       break;
-	 }
-	 
-	 if(feasible) {
-	    if((env->warm_start->has_ub && 
-		upper_bound<env->warm_start->ub)||
-	    !env->warm_start->has_ub){
-	       
-	       if(!env->warm_start->has_ub){
-		  env->warm_start->has_ub = TRUE;
-		  best_sol->has_sol = TRUE;
-	       }
-	       
-	    env->warm_start->ub = upper_bound;
-	    best_sol->objval = upper_bound;
-	    new_solution = true;
-	    }
-	 }
-      }else if(change_type == COL_BOUNDS_CHANGED){
-	 
-	 colsol = (double*)calloc(env->mip->n, DSIZE);
-	 
-	 for(i = 0; i<root->sol_size; i++){
-	    upper_bound += mip->obj[root->sol_ind[i]] * root->sol[i];
-	    colsol[root->sol_ind[i]] = root->sol[i];
-	 }
-	 
-	 for(i = 0; i < env->mip->n; i++){
-	    if ((colsol[i] < env->mip->lb[i] - lpetol) || 
-		(colsol[i] > env->mip->ub[i] + lpetol))
-	       feasible = FALSE;
-	 }
-	 
-	 if(feasible) {
-	    if((env->warm_start->has_ub && 
-		upper_bound < env->warm_start->ub)||
-	       !env->warm_start->has_ub){
-	       
-	       if(!env->warm_start->has_ub){
-		  env->warm_start->has_ub = TRUE;
-		  best_sol->has_sol = TRUE;
-	       }
-	       
-	       env->warm_start->ub = upper_bound;
-	       best_sol->objval = upper_bound;
-	       new_solution = true;
-	    }
-	 }
+      if(feasible){
+         if(change_type == OBJ_COEFF_CHANGED || change_type == COLS_ADDED){
+            if(!env->par.mc_warm_start){
+               for(i = 0; i<root->sol_size; i++){
+                  upper_bound += mip->obj[root->sol_ind[i]] * root->sol[i];
+               }	    	       
+               if((env->warm_start->has_ub && 
+                        upper_bound<env->warm_start->ub)||
+                     !env->warm_start->has_ub){
+
+                  if(!env->warm_start->has_ub){
+                     env->warm_start->has_ub = TRUE;
+                     best_sol->has_sol = TRUE;
+                  }
+
+                  env->warm_start->ub = upper_bound;
+                  best_sol->objval = upper_bound;
+                  new_solution = true;
+               }
+
+            } else {
+
+               gamma = env->par.lp_par.mc_gamma;
+               tau = env->par.lp_par.mc_tau;
+
+               for(i = 0; i<root->sol_size; i++){
+                  obj[0] += mip->obj1[root->sol_ind[i]]*root->sol[i];
+                  obj[1] += mip->obj2[root->sol_ind[i]]*root->sol[i];
+               }
+
+               if(gamma != -1.0){
+                  objval = gamma*obj[0] + tau*obj[1];
+               } else{
+                  objval = tau*obj[1];
+               }
+               if ((env->has_mc_ub &&  (objval < env->mc_ub - lpetol - 
+                           MAX(0, MIN(gamma, tau)))) ||
+                     !env->has_mc_ub){
+
+                  if(!env->has_mc_ub){
+                     env->has_mc_ub = TRUE;
+                     env->warm_start->has_ub = TRUE;
+                     best_sol->has_sol = TRUE;
+                  }
+
+                  env->mc_ub = env->warm_start->ub = best_sol->objval = objval;
+                  env->obj[0] = obj[0];
+                  env->obj[1] = obj[1];
+                  new_solution = TRUE;
+               }
+            }    
+         }else if(change_type == RHS_CHANGED){
+
+            colsol = (double*)calloc(env->mip->n, DSIZE);
+            rowact = (double*) calloc(env->mip->m, DSIZE);
+            matbeg = env->mip->matbeg;
+            matval = env->mip->matval;
+            matind = env->mip->matind;
+
+            for(i = 0; i<root->sol_size; i++){
+               upper_bound += mip->obj[root->sol_ind[i]] * root->sol[i];
+               colsol[root->sol_ind[i]] = root->sol[i];
+            }   
+
+            for(i = 0; i < env->mip->n; i++){
+               for(j = matbeg[i]; j<matbeg[i+1]; j++){
+                  rowact[matind[j]] += matval[j] * colsol[i];
+               }
+            }	 
+
+            for(i = 0; i < env->mip->m; i++){
+               switch(env->mip->sense[i]){
+                  case 'L': 
+                     if (rowact[i] > env->mip->rhs[i] + lpetol)
+                        feasible = FALSE;
+                     break;
+                  case 'G':
+                     if (rowact[i] < env->mip->rhs[i] - lpetol)
+                        feasible = FALSE;
+                     break;
+                  case 'E':
+                     if (!((rowact[i] > env->mip->rhs[i] - lpetol) && 
+                              (rowact[i] < env->mip->rhs[i] + lpetol)))
+                        feasible = FALSE;
+                     break;
+                  case 'R':
+                     if (rowact[i] > env->mip->rhs[i] + lpetol || 
+                           rowact[i] < env->mip->rhs[i] - env->mip->rngval[i] - lpetol)
+                        feasible = FALSE;
+                     break;
+                  case 'N':
+                  default:
+                     break;
+               }
+
+               if (!feasible) 
+                  break;
+            }
+
+            if(feasible) {
+               if((env->warm_start->has_ub && 
+                        upper_bound<env->warm_start->ub)||
+                     !env->warm_start->has_ub){
+
+                  if(!env->warm_start->has_ub){
+                     env->warm_start->has_ub = TRUE;
+                     best_sol->has_sol = TRUE;
+                  }
+
+                  env->warm_start->ub = upper_bound;
+                  best_sol->objval = upper_bound;
+                  new_solution = true;
+               }
+            }
+         }else if(change_type == COL_BOUNDS_CHANGED){
+
+            colsol = (double*)calloc(env->mip->n, DSIZE);
+
+            for(i = 0; i<root->sol_size; i++){
+               upper_bound += mip->obj[root->sol_ind[i]] * root->sol[i];
+               colsol[root->sol_ind[i]] = root->sol[i];
+            }
+
+            for(i = 0; i < env->mip->n; i++){
+               if ((colsol[i] < env->mip->lb[i] - lpetol) || 
+                     (colsol[i] > env->mip->ub[i] + lpetol))
+                  feasible = FALSE;
+            }
+
+            if(feasible) {
+               if((env->warm_start->has_ub && 
+                        upper_bound < env->warm_start->ub)||
+                     !env->warm_start->has_ub){
+
+                  if(!env->warm_start->has_ub){
+                     env->warm_start->has_ub = TRUE;
+                     best_sol->has_sol = TRUE;
+                  }
+
+                  env->warm_start->ub = upper_bound;
+                  best_sol->objval = upper_bound;
+                  new_solution = true;
+               }
+            }
+         }
       }
-   }
 
-   if(new_solution){
-      
-      best_sol->xlevel = root->bc_level;
-      best_sol->xindex = root->bc_index;
-      best_sol->xlength = root->sol_size;
-      best_sol->lpetol = lpetol;
-      
-      FREE(best_sol->xind);
-      FREE(best_sol->xval);
-      
-      //      if(delete_node){
-      best_sol->xind = root->sol_ind;
-      best_sol->xval = root->sol;
-      root->sol_ind = 0;
-      root->sol = 0;
-	 //      } else {
-	 //	 best_sol->xind = (int *)malloc(ISIZE*root->sol_size);
-	 //	 best_sol->xval = (double *)malloc(DSIZE*root->sol_size);
-	 //	 memcpy(best_sol->xind, root->sol_ind, ISIZE*root->sol_size);
-	 //	 memcpy(best_sol->xval, root->sol, DSIZE* root->sol_size);   
-      //}
-   }  
-   FREE(rowact);
-   FREE(colsol);
-   FREE(root->sol);
-   FREE(root->sol_ind);
-#endif
+      if(new_solution){
+
+         best_sol->xlevel = root->bc_level;
+         best_sol->xindex = root->bc_index;
+         best_sol->xlength = root->sol_size;
+         best_sol->lpetol = lpetol;
+
+         FREE(best_sol->xind);
+         FREE(best_sol->xval);
+
+         //      if(delete_node){
+         best_sol->xind = root->sol_ind;
+         best_sol->xval = root->sol;
+         root->sol_ind = 0;
+         root->sol = 0;
+         //      } else {
+         //	 best_sol->xind = (int *)malloc(ISIZE*root->sol_size);
+         //	 best_sol->xval = (double *)malloc(DSIZE*root->sol_size);
+         //	 memcpy(best_sol->xind, root->sol_ind, ISIZE*root->sol_size);
+         //	 memcpy(best_sol->xval, root->sol, DSIZE* root->sol_size);   
+         //}
+      }  
+      FREE(rowact);
+      FREE(colsol);
+      FREE(root->sol);
+      FREE(root->sol_ind);
+   }
 }
 
 /*===========================================================================*/
@@ -1862,6 +1860,14 @@ int set_param(sym_environment *env, char *line)
    else if (strcmp(key, "granularity") == 0){
       READ_DBL_PAR(tm_par->granularity);
       lp_par->granularity = tm_par->granularity;
+      return(0);
+   }
+   else if (strcmp(key, "use_symphony_application") == 0){
+      READ_INT_PAR(env->par.use_symphony_application);
+      lp_par->use_symphony_application =
+         cp_par->use_symphony_application =
+         cg_par->use_symphony_application =
+         dg_par->use_symphony_application = env->par.use_symphony_application;
       return(0);
    }
    
@@ -3879,11 +3885,11 @@ sym_environment *create_copy_environment (sym_environment *env)
       for (i = 0; i < env_copy->par.tm_par.max_cp_num; i++){
 	 env_copy->cp[i] = (cut_pool *) calloc(1, sizeof(cut_pool));
 	 env_copy->cp[i]->par = env_copy->par.cp_par;
-#ifdef USE_SYM_APPLICATION
-	 user_send_cp_data(env_copy->user, &env_copy->cp[i]->user);
-#else
-	 env_copy->cp[i]->user = env_copy->user;
-#endif
+         if (env->par.use_symphony_application) {
+            user_send_cp_data(env_copy->user, &env_copy->cp[i]->user);
+         } else {
+            env_copy->cp[i]->user = env_copy->user;
+         }
       }
       num = env_copy->par.tm_par.max_cp_num;
    }else{

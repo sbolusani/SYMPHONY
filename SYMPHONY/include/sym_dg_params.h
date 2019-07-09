@@ -136,6 +136,8 @@ typedef struct DRAW_GRAPH_PARAMS{
    char   nodelabel_font[MAX_FONT_LENGTH +1];
    char   nodeweight_font[MAX_FONT_LENGTH +1];
    char   edgeweight_font[MAX_FONT_LENGTH +1];
+
+   int    use_symphony_application; //Suresh
 }dg_params;
 
 #endif

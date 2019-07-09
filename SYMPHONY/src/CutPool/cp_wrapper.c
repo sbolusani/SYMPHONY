@@ -41,25 +41,25 @@ int receive_cp_data_u(cut_pool *cp)
    
    r_bufid = receive_msg(cp->master, CP_DATA);
    receive_char_array((char *)&cp->par, sizeof(cp_params));
-#ifdef USE_SYM_APPLICATION
-   switch( user_receive_cp_data(&cp->user) ){
-    case USER_SUCCESS:
-    case USER_NO_PP:
-    case USER_AND_PP:
-      /* User function terminated without problems. No post-processing. */
-    case USER_DEFAULT:
+   if (cp->par.use_symphony_application) {
+      switch( user_receive_cp_data(&cp->user) ){
+         case USER_SUCCESS:
+         case USER_NO_PP:
+         case USER_AND_PP:
+            /* User function terminated without problems. No post-processing. */
+         case USER_DEFAULT:
+            freebuf(r_bufid);
+            return(TRUE);
+         case USER_ERROR:
+         default:
+            freebuf(r_bufid);
+            /* Unexpected return value. Do something!! */
+            return(FALSE);
+      }
+   } else {
       freebuf(r_bufid);
       return(TRUE);
-    case USER_ERROR:
-    default:
-      freebuf(r_bufid);
-      /* Unexpected return value. Do something!! */
-      return(FALSE);
    }
-#else
-   freebuf(r_bufid);
-   return(TRUE);
-#endif
 }
 
 /*===========================================================================*/
@@ -67,9 +67,15 @@ int receive_cp_data_u(cut_pool *cp)
 int receive_lp_solution_cp_u(cut_pool *cp)
 {
    int termcode = 0;
-#ifdef USE_SYM_APPLICATION   
-   CALL_USER_FUNCTION( user_receive_lp_solution_cp(&cp->user) );
-#endif
+   int r_bufid;
+   
+   r_bufid = receive_msg(cp->master, CP_DATA);
+   receive_char_array((char *)&cp->par, sizeof(cp_params));
+
+   if (cp->par.use_symphony_application) {
+      CALL_USER_FUNCTION( user_receive_lp_solution_cp(&cp->user) );
+   }
+   freebuf(r_bufid);
    return(termcode);
 }
 
@@ -82,12 +88,12 @@ int check_cuts_u(cut_pool *cp, lp_sol *cur_sol, double *x)
    double quality;
    int cuts_to_check = MIN(cp->cut_num, cp->par.cuts_to_check);
 
-#ifdef USE_SYM_APPLICATION
-   if (user_prepare_to_check_cuts(cp->user, cur_sol->xlength, cur_sol->xind,
-				  cur_sol->xval) == USER_ERROR){
-      return(0);
+   if (cp->par.use_symphony_application) {
+      if (user_prepare_to_check_cuts(cp->user, cur_sol->xlength, cur_sol->xind,
+               cur_sol->xval) == USER_ERROR){
+         return(0);
+      }
    }
-#endif
    
    switch(cp->par.check_which){ /* decide which cuts to check for violation */
 
@@ -183,9 +189,9 @@ int check_cuts_u(cut_pool *cp, lp_sol *cur_sol, double *x)
       printf("Unknown rule for checking cuts \n\n");
       break;
    }
-#ifdef USE_SYM_APPLICATION   
-   user_finished_checking_cuts(cp->user);
-#endif
+   if (cp->par.use_symphony_application) {
+      user_finished_checking_cuts(cp->user);
+   }
 
    return(num_cuts);
 }
@@ -259,12 +265,12 @@ int check_cut_u(cut_pool *cp, lp_sol *cur_sol, cut_data *cut, int *is_violated,
       return(0);
       
     default:
-#ifdef USE_SYM_APPLICATION
-      return(user_check_cut(cp->user, cur_sol->lpetol, varnum, indices, values,
-			    cut, is_violated, quality));
-#else
-      return(USER_DEFAULT); 
-#endif
+      if (cp->par.use_symphony_application) {
+         return(user_check_cut(cp->user, cur_sol->lpetol, varnum, indices, values,
+			       cut, is_violated, quality));
+      } else {
+         return(USER_DEFAULT); 
+      }
    }
 }
 
@@ -274,9 +280,9 @@ int check_cut_u(cut_pool *cp, lp_sol *cur_sol, cut_data *cut, int *is_violated,
 void free_cut_pool_u(cut_pool *cp)
 {
    int i;
-#ifdef USE_SYM_APPLICATION	   
-   user_free_cp(&cp->user);
-#endif
+   if (cp->par.use_symphony_application) {
+      user_free_cp(&cp->user);
+   }
    for (i = cp->cut_num - 1; i >= 0; i--){
       FREE(cp->cuts[i]->cut.coef);
       FREE(cp->cuts[i]);
