@@ -52,14 +52,10 @@
 \*===========================================================================*/
 
 void user_usage(void){
-  printf("master [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\n",
+  printf("master [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t%s\n\t%s\n\n",
 	 "-H: help (solver-specific switches)",
 	 "-F model: model should be read in from file 'model'",
 	 "          (MPS format is assumed unless -D is also present)",
-	 "-X auxfile: auxiliary information for the bilevel application when 'model'", 
-    "             is a bilevel instance should be read in from file 'auxfile'",
-    "-B bilevel: indicator representing if 'model' is a bilevel instance (1) or a",
-    "             single level instance (0):-  default value = 0",
 	 "-D data: model is in AMPL format and data is in file 'data'");
 }
 
@@ -90,130 +86,56 @@ int user_initialize(void **user)
 
 int user_readparams(void *user, char *filename, int argc, char **argv)
 {
-   FILE *f = NULL;
+   /* This code is just a template for customization. Uncomment to use.*/
+#if 0
+   FILE *f;
    char line[50], key[50], value[50], c, tmp;
-   int i, j, tmpi;
+   int i;
    /* This gives you access to the user data structure*/
    user_problem *prob = (user_problem *) user;
    user_parameters *par = &(prob->par);
 
-   // default values
-   par->bilevel = 0;
-   par->auxfile[MAX_FILE_NAME_LENGTH] = ' ';
-
-   // Suresh: added following two parameters for check_lp_validity function
-   // to check if a known feasible solution is indeed feasible for the relation
-   // problem at hand. User needs to pass the solution to the function.
-#if defined(CHECK_CUT_VALIDITY) || defined(TRACE_PATH)
-   prob->feas_sol_size = 0;
-   prob->feas_sol = NULL;
-#endif
-
    if (strcmp(filename, "")){
       if ((f = fopen(filename, "r")) == NULL){
-         printf("SYMPHONY: file %s can't be opened\n", filename);
-         return(USER_ERROR); /*error check for existence of parameter file*/
+	 printf("SYMPHONY: file %s can't be opened\n", filename);
+	 return(USER_ERROR); /*error check for existence of parameter file*/
       }
 
       /* Here you can read in the parameter settings from the file. See the 
-         function bc_readparams() for an example of how this is done. */
+	 function bc_readparams() for an example of how this is done. */
       while(NULL != fgets(line, MAX_LINE_LENGTH, f)){  /*read in parameters*/
-         strcpy(key, "");
-         sscanf(line, "%s%s", key, value);
+	 strcpy(key, "");
+	 sscanf(line, "%s%s", key, value);
 
-         if (strcmp(key, "input_file") == 0){
-            par->infile[MAX_FILE_NAME_LENGTH] = 0;
-            strncpy(par->infile, value, MAX_FILE_NAME_LENGTH);
-         }
-         else if (strcmp(key, "aux_file") == 0){
-            par->auxfile[MAX_FILE_NAME_LENGTH] = 0;
-            strncpy(par->auxfile, value, MAX_FILE_NAME_LENGTH);
-         }
-         else if (strcmp(key, "bilevel") == 0){
-            READ_INT_PAR(par->bilevel);
-         }
-
-         /************************* cutgen parameters ***************************/
-         // Suresh: added following two parameters for check_lp_validity function
-         // to check if a known feasible solution is indeed feasible for the relation
-         // problem at hand. User needs to pass the solution to the function.
-#if defined(CHECK_CUT_VALIDITY) || defined(TRACE_PATH)
-         else if (strcmp(key, "feasible_solution_size") == 0){
-            READ_INT_PAR(prob->feas_sol_size);
-            if (prob->feas_sol_size){
-               double value1;
-
-               prob->feas_sol = (double *)calloc(prob->feas_sol_size, DSIZE);
-               for (i = 0; i < prob->feas_sol_size; i++){
-                  if (!fgets( line, MAX_LINE_LENGTH, f)){
-                     fprintf(stderr,
-                           "\nUSER I/O: error reading in feasible solution\n");
-                     exit(1);
-                  }
-                  sscanf(line, "%d %lf", &j, &value1);
-                  // TODO: Suresh: this check if too restrictive to ask to 
-                  // input feasible solution value even if the value is zero
-                  if (j != i){
-                     fprintf(stderr,
-                           "\nUSER I/O: error reading in feasible solution. Missing feasible solution value.\n");
-                     exit(1);
-                  }
-                  // TODO: Suresh: a check if value1 is indeed a double is required
-                  prob->feas_sol[i] = value1;
-               } // TODO: Suresh: No check if feasible solution size is same as num_vars
-            }
-         }
-#endif
+	 if (strcmp(key, "input_file") == 0){
+	    par->infile[MAX_FILE_NAME_LENGTH] = 0;
+	    strncpy(par->infile, value, MAX_FILE_NAME_LENGTH);
+	 }
       }
-   } else {
-      goto EXIT;
+
+      fclose(f);
    }
 
    /* Here you can parse the command line for options. By convention, the
       users options should be capital letters */
 
-EXIT:
-
    for (i = 1; i < argc; i++){
       sscanf(argv[i], "%c %c", &tmp, &c);
       if (tmp != '-')
-         continue;
+	 continue;
       switch (c) {
-         case 'H':
-            user_usage();
-            exit(0);
-            break;
-         case 'F':
-            strncpy(par->infile, argv[++i], MAX_FILE_NAME_LENGTH);
-            break;
-         case 'X':
-            strncpy(par->auxfile, argv[++i], MAX_FILE_NAME_LENGTH);
-            break;
-         case 'B':
-            if (i < argc - 1){
-               if (!sscanf(argv[i+1], "%i", &tmpi)){
-                  printf("Warning: Missing argument to command-line switch -%c\n",
-                        c);
-               }else{
-                  i++;
-                  par->bilevel = tmpi;
-               }
-            }else{
-               printf("Warning: Missing argument to command-line switch -%c\n",c);
-            }
-            break;
+       case 'H':
+	 user_usage();
+	 exit(0);
+	 break;
+       case 'F':
+	 strncpy(par->infile, argv[++i], MAX_FILE_NAME_LENGTH);
+	 break;
       };
    }
+#endif
 
-      if ( par->bilevel && (!strcmp(par->auxfile, "")) ){
-         printf("SYMPHONY: Missing auxiliary file name. An auxiliary file is required\n");
-         return(USER_ERROR); /*error check for existence of auxiliary file*/
-      }
-
-   if (f)
-      fclose(f);
-
-   return(USER_SUCCESS);
+   return(USER_DEFAULT);
 }
 
 /*===========================================================================*/
@@ -404,25 +326,7 @@ int user_send_lp_data(void *user, void **user_lp)
       Otherwise, this code should be virtually
       identical to that of user_receive_lp_data() in the LP process.*/
 
-   user_problem *cblp_lp = (user_problem *) calloc(1, sizeof(user_problem));
-
-   *user_lp = (void *)cblp_lp;
-   
-   cblp_lp->par = prob->par;
-   cblp_lp->colnum = prob->colnum;
-   cblp_lp->rownum = prob->rownum;
-   cblp_lp->ccnum = prob->ccnum;
-   cblp_lp->ccind = prob->ccind;
-   cblp_lp->mip = prob->mip;
-
-   cblp_lp->feasible = prob->feasible;
-   cblp_lp->vvnum = prob->vvnum;
-   cblp_lp->vvind = (int *) calloc(prob->colnum, ISIZE);
-   cblp_lp->rowact = (double *) calloc(prob->rownum, DSIZE);
-   cblp_lp->feas_sol_size = prob->feas_sol_size;
-   cblp_lp->feas_sol = prob->feas_sol;
-   cblp_lp->aux = prob->aux;
-
+   *user_lp = user;
 #else
    /* Here, we send that data using message passing and the rest is
       done in user_receive_lp_data() in the LP process */
@@ -562,31 +466,6 @@ int user_send_feas_sol(void *user, int *feas_sol_size, int **feas_sol)
    return(USER_DEFAULT);
 }   
 
-/*===========================================================================*\
- * This is a debugging feature which might
- * allow you to find out why a known feasible solution is being cut off.
- * This function allows for double solutions, as opposed to above function.
-\*===========================================================================*/
-
-// TODO: Suresh: newly added. Discuss later!
-int user_send_feas_sol(void *user, int *feas_sol_size, double **feas_sol)
-{
-#ifdef CHECK_CUT_VALIDITY
-   user_problem *prob = (user_problem *) user;
-
-   if (prob->feas_sol_size) {
-      *feas_sol_size = prob->feas_sol_size;
-      *feas_sol = (double *)calloc(*feas_sol_size, DSIZE);
-      memcpy(*feas_sol, prob->feas_sol, *feas_sol_size * DSIZE);
-   } else {
-      *feas_sol_size = 0;
-   }
-   return(USER_SUCCESS);
-#else
-   return(USER_DEFAULT);
-#endif
-}
-
 /*===========================================================================*/
 
 /*===========================================================================*\
@@ -597,8 +476,6 @@ int user_free_master(void **user)
 {
    user_problem *prob = (user_problem *) (*user);
 
-   FREE(prob->ccind);
-   FREE(prob->mip);
    FREE(prob);
 
    return(USER_SUCCESS);
@@ -607,7 +484,7 @@ int user_free_master(void **user)
 
 /*===========================================================================*\
  * This function is used to lift the user created cuts during warm starting *
-\*===========================================================================*/
+/*===========================================================================*/
 
 int user_ws_update_cuts (void *user, int *size, char **coef, double * rhs, 
 			 char *sense, char type, int new_col_num, 

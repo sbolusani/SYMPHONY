@@ -14,7 +14,6 @@
 
 /* system include files */
 #include <stdio.h>
-#include <math.h>
 
 /* SYMPHONY include files */
 #include "sym_constants.h"
@@ -54,6 +53,8 @@ int user_receive_lp_data(void **user)
 int user_create_subproblem(void *user, int *indices, MIPdesc *mip, 
 			   int *maxn, int *maxm, int *maxnz)
 {
+   user_problem *prob = (user_problem *) user;
+
    return(USER_DEFAULT);
 }      
 
@@ -70,59 +71,7 @@ int user_is_feasible(void *user, double lpetol, int varnum, int *indices,
 		     double *values, int *feasible, double *objval,
 		     char branching, double *heur_solution)
 {
-   user_problem * prob = (user_problem *)user;
-
-   double *rowact, *rhs, *matval;
-   int *matbeg, *matind;
-
-   rowact = (double *) calloc(prob->rownum, DSIZE);
-
-   rhs = prob->mip->rhs;
-   matbeg = prob->mip->matbeg;
-   matval = prob->mip->matval;
-   matind = prob->mip->matind;
-
-   int i, j, violcount = 0, *violind;
-   violind = (int *) malloc(varnum * ISIZE);
-
-   for(i = 0; i < varnum; i++){
-      for(j = matbeg[indices[i]]; j<matbeg[indices[i]+1]; j++){
-         rowact[matind[j]] += matval[j] * values[i];
-      }
-   }
-
-   for (i = 0; i < varnum; i++) {
-      if (prob->ccind[indices[i]] >= 0) {
-         if (fabs(values[i]) > lpetol && 
-               fabs(rowact[prob->ccind[indices[i]]] - 
-                  rhs[prob->ccind[indices[i]]]) > lpetol){
-            violind[violcount] = indices[i];
-            violcount++;
-         }
-      }
-   }
-
-   if (violcount > 0) {
-      *feasible = IP_INFEASIBLE;
-
-      /* Update appropriate values for prob data structure */
-      prob->feasible = *feasible;
-      prob->vvind       = (int *)    malloc(violcount * ISIZE);
-      prob->rowact      = (double *) malloc(prob->rownum * DSIZE);
-      memcpy(prob->vvind, violind, violcount * ISIZE);
-      memcpy(prob->rowact, rowact, prob->rownum * DSIZE);
-      prob->vvnum = violcount;
-   } else {
-      *feasible = IP_FEASIBLE;
-
-      /* Update appropriate values for prob data structure */
-      prob->feasible = *feasible;
-      prob->vvnum = 0;
-   }
-
-   FREE(violind);
-   FREE(rowact);
-   return (USER_SUCCESS);
+   return(USER_DEFAULT);
 }
 
 /*===========================================================================*/
