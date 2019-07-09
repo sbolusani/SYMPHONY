@@ -29015,7 +29015,7 @@ CFLAGS=$CXXFLAGS
 
 # Here list all the files that configure should create (except for the
 # configuration header file)
-                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile src/OsiSym/Makefile test/Makefile Examples/Makefile Applications/Makefile.Applications Applications/CNRP/Makefile Applications/MATCH/Makefile Applications/MCKP/Makefile Applications/MISOCO/Makefile Applications/MPP/Makefile Applications/SPP/Makefile Applications/SPP+CUTS/Makefile Applications/USER/Makefile Applications/VRP/Makefile symphony.pc symphony-app.pc symphony-uninstalled.pc osi-sym.pc:src/OsiSym/osi-sym.pc.in osi-sym-uninstalled.pc:src/OsiSym/osi-sym-uninstalled.pc.in"
+                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile src/OsiSym/Makefile test/Makefile Examples/Makefile Applications/Makefile.Applications Applications/CBLP/Makefile Applications/CNRP/Makefile Applications/MATCH/Makefile Applications/MCKP/Makefile Applications/MISOCO/Makefile Applications/MPP/Makefile Applications/SPP/Makefile Applications/SPP+CUTS/Makefile Applications/USER/Makefile Applications/VRP/Makefile symphony.pc symphony-app.pc symphony-uninstalled.pc osi-sym.pc:src/OsiSym/osi-sym.pc.in osi-sym-uninstalled.pc:src/OsiSym/osi-sym-uninstalled.pc.in"
 
 
 
@@ -29034,6 +29034,9 @@ echo "${ECHO_T}$coin_vpath_config" >&6
 # Allow for newlines in the parameter
 if test $coin_vpath_config = yes; then
   cvl_tmp="Applications/INSTALL
+                    Applications/CBLP/README
+                    Applications/CBLP/INSTALL
+                    Applications/CBLP/sample.mps
                     Applications/CNRP/README
                     Applications/CNRP/INSTALL
                     Applications/CNRP/sample.cnrp
@@ -30136,6 +30139,7 @@ do
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "Examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES Examples/Makefile" ;;
   "Applications/Makefile.Applications" ) CONFIG_FILES="$CONFIG_FILES Applications/Makefile.Applications" ;;
+  "Applications/CBLP/Makefile" ) CONFIG_FILES="$CONFIG_FILES Applications/CBLP/Makefile" ;;
   "Applications/CNRP/Makefile" ) CONFIG_FILES="$CONFIG_FILES Applications/CNRP/Makefile" ;;
   "Applications/MATCH/Makefile" ) CONFIG_FILES="$CONFIG_FILES Applications/MATCH/Makefile" ;;
   "Applications/MCKP/Makefile" ) CONFIG_FILES="$CONFIG_FILES Applications/MCKP/Makefile" ;;

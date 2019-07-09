@@ -577,6 +577,7 @@ dnl      ;;
 dnl esac
 dnl AC_MSG_RESULT($sym_appl)
 dnl AM_CONDITIONAL(SYM_WITH_APPL, [test $sym_with_appl = true])
+dnl AM_CONDITIONAL(SYM_WITH_CBLP, [test $sym_appl = cblp])
 dnl AM_CONDITIONAL(SYM_WITH_CNRP, [test $sym_appl = cnrp])
 dnl AM_CONDITIONAL(SYM_WITH_MATCH, [test $sym_appl = match])
 dnl AM_CONDITIONAL(SYM_WITH_MCKP, [test $sym_appl = mckp])
@@ -925,6 +926,7 @@ AC_CONFIG_FILES([Makefile
                  test/Makefile
 		 Examples/Makefile
 		 Applications/Makefile.Applications
+		 Applications/CBLP/Makefile
                  Applications/CNRP/Makefile
 		 Applications/MATCH/Makefile
 		 Applications/MCKP/Makefile
@@ -941,6 +943,9 @@ AC_CONFIG_FILES([Makefile
 		 osi-sym-uninstalled.pc:src/OsiSym/osi-sym-uninstalled.pc.in])
 
 AC_COIN_VPATH_LINK([Applications/INSTALL
+                    Applications/CBLP/README
+                    Applications/CBLP/INSTALL
+                    Applications/CBLP/sample.mps
                     Applications/CNRP/README
                     Applications/CNRP/INSTALL
                     Applications/CNRP/sample.cnrp

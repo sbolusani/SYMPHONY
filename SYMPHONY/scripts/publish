@@ -67,7 +67,7 @@ foreach file (WIN32/*.mak)
 awk -f scripts/reformat.awk $file > $DIR/$file
 end
 
-foreach app (Vrp CNRP MCKP MATCH MPP SPP SPP+CUTS Template)
+foreach app (Vrp CBLP CNRP MCKP MATCH MPP SPP SPP+CUTS Template)
 mkdir $DIR/$app
 foreach file ($app/Makefile $app/sample.*)
 awk -f scripts/reformat.awk $file > $DIR/$file
@@ -81,7 +81,7 @@ awk -f scripts/reformat.awk $file > $DIR/$file
 end
 end
 
-foreach app (Vrp CNRP MATCH MPP SPP SPP+CUTS Template)
+foreach app (Vrp CBLP CNRP MATCH MPP SPP SPP+CUTS Template)
 mkdir $DIR/$app/LP
 foreach file ($app/LP/*.c)
 awk -f scripts/reformat.awk $file > $DIR/$file
@@ -108,7 +108,7 @@ awk -f scripts/reformat.awk $file > $DIR/$file
 end
 end
 
-foreach app (Vrp CNRP MCKP MATCH MPP SPP SPP+CUTS Template)
+foreach app (Vrp CBLP CNRP MCKP MATCH MPP SPP SPP+CUTS Template)
 mkdir $DIR/$app/WIN32
 foreach file ($app/WIN32/*.dsp)
 awk -f scripts/reformat.awk $file > $DIR/$file
@@ -121,13 +121,13 @@ awk -f scripts/reformat.awk $file > $DIR/$file
 end
 end
 
-foreach app (Vrp CNRP FLOPC++ MCKP MATCH MPP SPP SPP+CUTS Template)
+foreach app (Vrp CBLP CNRP FLOPC++ MCKP MATCH MPP SPP SPP+CUTS Template)
 foreach file ($app/README)
 awk -f scripts/reformat.awk $file > $DIR/$file
 end
 end
 
-foreach app (Vrp CNRP MCKP MATCH MPP SPP SPP+CUTS)
+foreach app (Vrp CBLP CNRP MCKP MATCH MPP SPP SPP+CUTS)
 foreach file ($app/LICENSE)
 awk -f scripts/reformat.awk $file > $DIR/$file
 end
@@ -146,7 +146,7 @@ awk -f scripts/reformat.awk $file > $DIR/$file
 end
 end
 
-foreach app (Vrp CNRP MCKP MATCH MPP SPP SPP+CUTS)
+foreach app (Vrp CBLP CNRP MCKP MATCH MPP SPP SPP+CUTS)
 mv $DIR/$app $DIR/$app-$VER
 end
 mv $DIR/Vrp-$VER $DIR/VRP-$VER
@@ -172,7 +172,7 @@ latex Walkthrough
 dvipdfm Walkthrough
 mv Walkthrough.pdf $DIR/Doc/SYMPHONY-Walkthrough.pdf
 cd $HOME
-foreach app (VRP CNRP MCKP MATCH MPP SPP SPP+CUTS)
+foreach app (VRP CBLP CNRP MCKP MATCH MPP SPP SPP+CUTS)
 mv $DIR/$app-$VER .
 tar -czvf SYMPHONY-$app-$VER.tgz $app-$VER/*
 zip -r SYMPHONY-$app-$VER.zip $app-$VER/* 
@@ -180,7 +180,7 @@ end
 tar --exclude '$DIR/Doc/*.zip' -czvf SYMPHONY-$VER.tgz SYMPHONY-$VER/*
 zip -r SYMPHONY-$VER.zip SYMPHONY-$VER/* -x \*.tgz
 mv SYMPHONY-$VER.* $DIR
-foreach app (VRP CNRP MCKP MATCH MPP SPP SPP+CUTS)
+foreach app (VRP CBLP CNRP MCKP MATCH MPP SPP SPP+CUTS)
 mv $app-$VER $DIR
 mv SYMPHONY-$app-$VER.* $DIR
 end
