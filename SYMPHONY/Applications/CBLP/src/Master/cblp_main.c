@@ -86,7 +86,7 @@ int main(int argc, char **argv)
    sym_version();
 
    if (!env){
-      printf("Error initializing environement\n");
+      printf("Error initializing environment\n");
       exit(0);
    }
 
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
       CALL_FUNCTION( user_preprocess_single_level_prob(prob) );
       CALL_FUNCTION( user_generate_bilevel_problem(env, prob) );
       CALL_FUNCTION( user_preprocess_bilevel_prob(prob) );
-      //TODO: Load the problem!!
+      CALL_FUNCTION( user_load_explicit_problem(env, prob) );
 
    } else {
       /* For two cases:
@@ -121,6 +121,7 @@ int main(int argc, char **argv)
 
    }
 
+   printf("\nAbout to start solving the CBLP!\n\n");
    CALL_FUNCTION( sym_solve(env) );
 
    CALL_FUNCTION( sym_close_environment(env) );
@@ -1150,12 +1151,23 @@ int user_orig_col_bound_tightening(user_problem *prob) {
    orig_lb = prob->mip->lb;
    orig_ub = prob->mip->ub;
 
+   //Default print statements
+   /*
+   printf("START: Single-level problem's bound improvement preprocessing.\n");
+   printf("\nOriginal bounds:\n");
+   for (i = 0; i < prob->mip->n; i++) {
+       printf("\t%.3e <= col-%d <= %.3e\n", orig_lb[i], i, orig_ub[i]);
+   }
+   printf("\n");
+   */
+
    //Set parameters for warm starting
    sym_set_int_param(env, "keep_warm_start", TRUE);
    sym_set_int_param(env, "do_reduced_cost_fixing", 0);
    sym_set_int_param(env, "do_primal_heuristic", 0);
    sym_set_int_param(env, "prep_level", -1);
    sym_set_int_param(env, "verbosity", -5);
+   sym_set_int_param(env, "use_symphony_application", 0);
 
    /* Solve a minimization problem corresponding to first variable,
     * i.e., minimize first variable s.t. given two levels of constraints.
@@ -1172,7 +1184,7 @@ int user_orig_col_bound_tightening(user_problem *prob) {
    ws = sym_get_warm_start(env, true);
 
    //Certain parameters
-   int total_bound_changes = 0, threshold_bound_changes = int(0.25*2*num_cols);
+   int total_bound_changes = 0, threshold_bound_changes = int(0.15*2*num_cols);
    int total_refinements = 4, j;
 
    //Reset certain (unwanted) parameters to defaults
@@ -1239,7 +1251,20 @@ int user_orig_col_bound_tightening(user_problem *prob) {
          orig_ub[i-1] = -new_ub;
          total_bound_changes++;
       }
-      printf("\nMAIN: Done solving all min/max bounding problems in refinement %d\n\n", j);
+      /*
+      printf("Done solving all min/max bounding problems in refinement %d\n", j);
+      if (total_bound_changes) {
+         printf("Total bound changes = %d\n", total_bound_changes);
+         printf("\nModified bounds:\n");
+         for (i = 0; i < prob->mip->n; i++) {
+            printf("\t%.3e <= col-%d <= %.3e\n", orig_lb[i], i, orig_ub[i]);
+         }
+         printf("\n");
+
+      } else {
+          printf("No bound changes detected!\n");
+      }
+      */
 
       if (total_bound_changes >= threshold_bound_changes) {
          //Reset total_bound_changes
@@ -1257,6 +1282,7 @@ int user_orig_col_bound_tightening(user_problem *prob) {
          break;
       }
    }
+//   printf("END: Single-level problem's bound improvement preprocessing.\n");
 
    FREE(ws);
    sym_close_environment(env);
@@ -1297,6 +1323,15 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
          prob->inflbind[j] = 1;
       }
    }
+
+   /*
+   printf("\nOriginal single-level bounds:\n");
+   for (i = 0; i < prob->mip->n; i++) {
+       printf("\t%.3e <= col-%d <= %.3e\n", prob->mip->lb[i], i, prob->mip->ub[i]);
+   }
+   printf("\n");
+   */
+
 
    /****************************************************************************\
     * Consider the coefficient matrix (of both upper and lower level primal cons)
@@ -1728,6 +1763,14 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
    memcpy(prob->mip->matval, matrix_values, DSIZE * prob->mip->matbeg[prob->mip->n]);
    memcpy(prob->mip->matind, matrix_indices, ISIZE * prob->mip->matbeg[prob->mip->n]);
 
+   /*
+   printf("\nOriginal two-level bounds:\n");
+   for (i = 0; i < prob->mip->n; i++) {
+       printf("\t%.3e <= col-%d <= %.3e\n", prob->mip->lb[i], i, prob->mip->ub[i]);
+   }
+   printf("\n");
+   */
+
    /* TODO: Delete mat*_row vectors here? */
    FREE(column_starts);
    FREE(matrix_indices);
@@ -1796,12 +1839,23 @@ int user_col_bound_tightening(user_problem *prob) {
    orig_ub = prob->mip->ub;
    sense = prob->mip->sense;
 
+   //Default print statements
+   /*
+   printf("START: Two-level problem's bound improvement preprocessing.\n");
+   printf("\nOriginal bounds:\n");
+   for (i = 0; i < prob->mip->n; i++) {
+       printf("\t%.3e <= col-%d <= %.3e\n", orig_lb[i], i, orig_ub[i]);
+   }
+   printf("\n");
+   */
+
    //Set parameters for warm starting
    sym_set_int_param(env, "keep_warm_start", TRUE);
    sym_set_int_param(env, "do_reduced_cost_fixing", 0);
    sym_set_int_param(env, "do_primal_heuristic", 0);
    sym_set_int_param(env, "prep_level", -1);
    sym_set_int_param(env, "verbosity", -5);
+   sym_set_int_param(env, "use_symphony_application", 0);
 
    /* Solve a minimization problem corresponding to first variable,
     * i.e., minimize first variable s.t. all linear constraints.
@@ -1821,6 +1875,26 @@ int user_col_bound_tightening(user_problem *prob) {
    int total_bound_changes = 0, threshold_bound_changes = int(0.25*2*num_cols);
    int total_refinements = 4, j, ccindex;
 
+   //If better bound:
+   if (new_lb >= orig_lb[0] + etol) {
+      //Changing LB of appropriate col.
+      sym_set_col_lower(env, 0, new_lb);
+      orig_lb[0] = new_lb;
+
+      //Incrementing total_bound_changes
+      total_bound_changes++;
+
+      //Checking if new_lb > 0
+      if (new_lb >= etol) {
+         //Make certain changes if a complementarity condition exists
+         ccindex = ccind[0];
+         if (ccindex >= 0) {
+            sense[ccindex] = 'E';
+            ccind[0] = -1;
+         }
+      }
+   }
+
    //Reset certain (unwanted) parameters to defaults
    sym_set_int_param(env, "keep_warm_start", FALSE);
    sym_set_int_param(env, "do_reduced_cost_fixing", 1);
@@ -1830,25 +1904,6 @@ int user_col_bound_tightening(user_problem *prob) {
    for (j = 0; j < total_refinements; j++) {
       /* Solve remaining minimization problems for other variables */
       for (i = 1; i < num_cols; i++) {
-         //If better bound found:
-         if (new_lb >= orig_lb[i-1] + etol) {
-            //Changing LB of appropriate col.
-            sym_set_col_lower(env, i-1, new_lb);
-            orig_lb[i-1] = new_lb;
-
-            //Incrementing total_bound_changes
-            total_bound_changes++;
-
-            //Checking if new_lb > 0
-            if (new_lb >= etol) {
-               //Make certain changes if a complementarity condition exists
-               ccindex = ccind[i-1];
-               if (ccindex >= 0) {
-                  sense[ccindex] = 'E';
-                  ccind[i-1] = -1;
-               }
-            }
-         }
          //Changing objective function relative to previous objective function
          sym_set_obj_coeff(env, i-1, 0);
          sym_set_obj_coeff(env, i, 1);
@@ -1856,25 +1911,34 @@ int user_col_bound_tightening(user_problem *prob) {
          sym_set_warm_start(env, ws);
 
          sym_warm_solve(env);
-         sym_get_obj_val(env, &new_lb);
-      }
-      //If better bound for last column found:
-      if (new_lb >= orig_lb[i-1] + etol) {
-         //Changing LB of appropriate col.
-         sym_set_col_lower(env, i-1, new_lb);
-         orig_lb[i-1] = new_lb;
 
-         //Incrementing total_bound_changes
-         total_bound_changes++;
+         if (sym_is_proven_optimal(env)) {
+            sym_get_obj_val(env, &new_lb);
+//            printf("Newly found lower bound = %.3e for column %d.\n", new_lb, i);
+//            printf("\n");
 
-         //Checking if new_lb > 0
-         if (new_lb >= etol) {
-            //Make certain changes if a complementarity condition exists
-            ccindex = ccind[i-1];
-            if (ccindex >= 0) {
-               sense[ccindex] = 'E';
-               ccind[i-1] = -1;
+            //If better bound found:
+            if (new_lb >= orig_lb[i] + etol) {
+               //Changing LB of appropriate col.
+               sym_set_col_lower(env, i, new_lb);
+               orig_lb[i] = new_lb;
+
+               //Incrementing total_bound_changes
+               total_bound_changes++;
+
+               //Checking if new_lb > 0
+               if (new_lb >= etol) {
+                  //Make certain changes if a complementarity condition exists
+                  ccindex = ccind[i];
+                  if (ccindex >= 0) {
+                     sense[ccindex] = 'E';
+                     ccind[i] = -1;
+                  }
+               }
             }
+
+         } else {
+//            printf("Minimization bounding problem for column %d not solved to optimality.\n", i);
          }
       }
 
@@ -1888,14 +1952,25 @@ int user_col_bound_tightening(user_problem *prob) {
       sym_warm_solve(env);
       sym_get_obj_val(env, &new_ub);
 
+      //Changing UB of variable if better bound found
+      if (-new_ub <= orig_ub[0] - etol) {
+         sym_set_col_upper(env, 0, -new_ub);
+         orig_ub[0] = -new_ub;
+         total_bound_changes++;
+
+         //Checking if new_ub < 0
+         if (-new_ub <= etol) {
+            //Make certain changes if a complementarity condition exists
+            ccindex = ccind[0];
+            if (ccindex >= 0) {
+               sense[ccindex] = 'E';
+               ccind[0] = -1;
+            }
+         }
+      }
+
       /* Solve remaining maximization problems for other variables */
       for (i = 1; i < num_cols; i++) {
-         //Changing UB of previous variable if better bound found
-         if (-new_ub <= orig_ub[i-1] - etol) {
-            sym_set_col_upper(env, i-1, -new_ub);
-            orig_ub[i-1] = -new_ub;
-            total_bound_changes++;
-         }
          //Changing objective function relative to previous objective function
          sym_set_obj_coeff(env, i-1, 0);
          sym_set_obj_coeff(env, i, -1);
@@ -1903,15 +1978,46 @@ int user_col_bound_tightening(user_problem *prob) {
          sym_set_warm_start(env, ws);
 
          sym_warm_solve(env);
-         sym_get_obj_val(env, &new_ub);
+         if (sym_is_proven_optimal(env)) {
+            sym_get_obj_val(env, &new_ub);
+//            printf("Newly found upper bound = %.3e for column %d.\n", -new_ub, i);
+//            printf("\n");
+
+            //Changing UB of variable if better bound found
+            if (-new_ub <= orig_ub[i] - etol) {
+               sym_set_col_upper(env, i, -new_ub);
+               orig_ub[i] = -new_ub;
+               total_bound_changes++;
+
+               //Checking if new_ub > 0
+               if (-new_ub <= etol) {
+                  //Make certain changes if a complementarity condition exists
+                  ccindex = ccind[i];
+                  if (ccindex >= 0) {
+                     sense[ccindex] = 'E';
+                     ccind[i] = -1;
+                  }
+               }
+            }
+         } else {
+//            printf("Maximization bounding problem for column %d not solved to optimality.\n", i);
+         }
       }
-      //Changing UB of last variable if better bound found
-      if (-new_ub <= orig_ub[i-1] - etol) {
-         sym_set_col_upper(env, i-1, -new_ub);
-         orig_ub[i-1] = -new_ub;
-         total_bound_changes++;
+
+      /*
+      printf("Done solving all min/max bounding problems in refinement %d\n", j);
+      if (total_bound_changes) {
+         printf("Total bound changes = %d\n", total_bound_changes);
+         printf("\nModified bounds:\n");
+         for (i = 0; i < prob->mip->n; i++) {
+            printf("\t%.3e <= col-%d <= %.3e\n", orig_lb[i], i, orig_ub[i]);
+         }
+         printf("\n");
+
+      } else {
+          printf("No bound changes detected!\n");
       }
-      printf("\nMAIN: Done solving all min/max bounding problems in refinement %d\n\n", j);
+      */
 
       if (total_bound_changes >= threshold_bound_changes) {
          //Reset total_bound_changes
@@ -1930,8 +2036,24 @@ int user_col_bound_tightening(user_problem *prob) {
       }
    }
 
+//   printf("END: Two-level problem's bound improvement preprocessing.\n");
    FREE(ws);
    sym_close_environment(env);
+}
+
+
+/*===========================================================================*\
+       Loading the problem explicitly.
+\*===========================================================================*/
+
+int user_load_explicit_problem(sym_environment *env, user_problem *prob) {
+   /* Load the problem to SYMPHONY */
+   sym_explicit_load_problem(env, prob->mip->n, prob->mip->m,
+                              prob->mip->matbeg, prob->mip->matind,
+                              prob->mip->matval, prob->mip->lb, prob->mip->ub,
+                              prob->mip->is_int, prob->mip->obj, NULL,
+                              prob->mip->sense, prob->mip->rhs, prob->mip->rngval,
+                              true);
 }
 
 
