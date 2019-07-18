@@ -106,6 +106,11 @@ int main(int argc, char **argv)
       CALL_FUNCTION( user_rearrange_mat_vec(prob) );
       CALL_FUNCTION( user_preprocess_single_level_prob(prob) );
       CALL_FUNCTION( user_generate_bilevel_problem(env, prob) );
+      /* TODO: Are both single-level and bilevel preprocessors required?
+       *    It looks like they are redundant for two reasons.
+       *    1) x and y bounds remain the same after single-level preprocessor.
+       *    2) dual variable bounds cannot be improved.
+      */
       CALL_FUNCTION( user_preprocess_bilevel_prob(prob) );
       CALL_FUNCTION( user_load_explicit_problem(env, prob) );
 
@@ -327,6 +332,8 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
    n = prob->mip->n + prob->mip->m + num_lowerlevel_dual_ubvars + num_lowerlevel_dual_lbvars;
    m = prob->mip->m + num_lowerlevel_ubcons + num_lowerlevel_lbcons + (prob->mip->n - num_upperlevel_vars);
    nz = prob->mip->matbeg[prob->mip->n] + 2*num_lowerlevel_ubcons + 2*num_lowerlevel_lbcons + nz_lowerlevel;
+   prob->orig_colnum = prob->mip->n;
+   prob->orig_rownum = prob->mip->m;
    prob->colnum = n;
    prob->rownum = m;
 
@@ -1384,6 +1391,8 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
    n = prob->mip->n + (prob->mip->m - num_upperlevel_cons) + num_lowerlevel_dual_ubvars + num_lowerlevel_dual_lbvars;
    m = prob->mip->m + num_lowerlevel_ubcons + num_lowerlevel_lbcons + (prob->mip->n - num_upperlevel_vars);
    nz = prob->mip->matbeg[prob->mip->n] + 2*num_lowerlevel_ubcons + 2*num_lowerlevel_lbcons + nz_lowerlevel;
+   prob->orig_colnum = prob->mip->n;
+   prob->orig_rownum = prob->mip->m;
    prob->colnum = n;
    prob->rownum = m;
 
@@ -1828,10 +1837,11 @@ int user_col_bound_tightening(user_problem *prob) {
 
    //Get certain data for the given instance
    warm_start_desc * ws;
-   int num_cols, num_rows, i, *ccind;
+   int orig_num_cols, num_cols, num_rows, i, *ccind;
    double *orig_lb, *orig_ub, new_lb, new_ub, etol = 1e-6;
    char *sense;
 
+   orig_num_cols = prob->orig_colnum;
    num_cols = prob->mip->n;
    num_rows = prob->mip->m;
    ccind = prob->ccind;
@@ -1857,14 +1867,14 @@ int user_col_bound_tightening(user_problem *prob) {
    sym_set_int_param(env, "verbosity", -5);
    sym_set_int_param(env, "use_symphony_application", 0);
 
-   /* Solve a minimization problem corresponding to first variable,
-    * i.e., minimize first variable s.t. all linear constraints.
+   /* Solve a minimization problem corresponding to first dual variable,
+    * i.e., minimize first dual variable s.t. all linear constraints.
    */
    //Set objective function at first
-   sym_set_obj_coeff(env, 0, 1);
-   for (i = 1; i < num_cols; i++) {
+   for (i = 0; i < num_cols; i++) {
        sym_set_obj_coeff(env, i, 0);
    }
+   sym_set_obj_coeff(env, orig_num_cols, 1);
    sym_set_obj_sense(env, 1);
    //Now, solve the problem and get useful information
    sym_solve(env);
@@ -1872,14 +1882,14 @@ int user_col_bound_tightening(user_problem *prob) {
    ws = sym_get_warm_start(env, true);
 
    //Certain parameters
-   int total_bound_changes = 0, threshold_bound_changes = int(0.25*2*num_cols);
+   int total_bound_changes = 0, threshold_bound_changes = int(0.25*2*(num_cols-orig_num_cols));
    int total_refinements = 4, j, ccindex;
 
    //If better bound:
-   if (new_lb >= orig_lb[0] + etol) {
+   if (new_lb >= orig_lb[orig_num_cols] + etol) {
       //Changing LB of appropriate col.
-      sym_set_col_lower(env, 0, new_lb);
-      orig_lb[0] = new_lb;
+      sym_set_col_lower(env, orig_num_cols, new_lb);
+      orig_lb[orig_num_cols] = new_lb;
 
       //Incrementing total_bound_changes
       total_bound_changes++;
@@ -1887,10 +1897,10 @@ int user_col_bound_tightening(user_problem *prob) {
       //Checking if new_lb > 0
       if (new_lb >= etol) {
          //Make certain changes if a complementarity condition exists
-         ccindex = ccind[0];
+         ccindex = ccind[orig_num_cols];
          if (ccindex >= 0) {
             sense[ccindex] = 'E';
-            ccind[0] = -1;
+            ccind[orig_num_cols] = -1;
          }
       }
    }
@@ -1903,7 +1913,7 @@ int user_col_bound_tightening(user_problem *prob) {
 
    for (j = 0; j < total_refinements; j++) {
       /* Solve remaining minimization problems for other variables */
-      for (i = 1; i < num_cols; i++) {
+      for (i = orig_num_cols + 1; i < num_cols; i++) {
          //Changing objective function relative to previous objective function
          sym_set_obj_coeff(env, i-1, 0);
          sym_set_obj_coeff(env, i, 1);
@@ -1942,10 +1952,10 @@ int user_col_bound_tightening(user_problem *prob) {
          }
       }
 
-      /* Now, solve the maximization problem for first variable */
+      /* Now, solve the maximization problem for first dual variable */
       //Changing objective function relative to previous objective function
       sym_set_obj_coeff(env, num_cols-1, 0);
-      sym_set_obj_coeff(env, 0, -1);
+      sym_set_obj_coeff(env, orig_num_cols, -1);
       //Now, solve the problem and get useful information
       sym_set_warm_start(env, ws);
 
@@ -1953,24 +1963,24 @@ int user_col_bound_tightening(user_problem *prob) {
       sym_get_obj_val(env, &new_ub);
 
       //Changing UB of variable if better bound found
-      if (-new_ub <= orig_ub[0] - etol) {
-         sym_set_col_upper(env, 0, -new_ub);
-         orig_ub[0] = -new_ub;
+      if (-new_ub <= orig_ub[orig_num_cols] - etol) {
+         sym_set_col_upper(env, orig_num_cols, -new_ub);
+         orig_ub[orig_num_cols] = -new_ub;
          total_bound_changes++;
 
          //Checking if new_ub < 0
          if (-new_ub <= etol) {
             //Make certain changes if a complementarity condition exists
-            ccindex = ccind[0];
+            ccindex = ccind[orig_num_cols];
             if (ccindex >= 0) {
                sense[ccindex] = 'E';
-               ccind[0] = -1;
+               ccind[orig_num_cols] = -1;
             }
          }
       }
 
       /* Solve remaining maximization problems for other variables */
-      for (i = 1; i < num_cols; i++) {
+      for (i = orig_num_cols + 1; i < num_cols; i++) {
          //Changing objective function relative to previous objective function
          sym_set_obj_coeff(env, i-1, 0);
          sym_set_obj_coeff(env, i, -1);
@@ -2023,9 +2033,9 @@ int user_col_bound_tightening(user_problem *prob) {
          //Reset total_bound_changes
          total_bound_changes = 0;
 
-         //Changing objective function back to minimizing first coefficient
+         //Changing objective function back to minimizing first dual variable
          sym_set_obj_coeff(env, i-1, 0);
-         sym_set_obj_coeff(env, 0, 1);
+         sym_set_obj_coeff(env, orig_num_cols, 1);
          //Now, solve the problem and get useful information
          sym_set_warm_start(env, ws);
 

@@ -57,6 +57,8 @@ typedef struct AUX_DATA{
 
 typedef struct USER_PROBLEM{
    user_parameters  par;    /* Parameters */
+   int              orig_colnum; /* Total # of columns in original CBLP */
+   int              orig_rownum; /* Total # of rows in original CBLP */
    int              colnum; /* Number of columns in base matrix */
    int              rownum; /* Number of rows in base matrix */
 
