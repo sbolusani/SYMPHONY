@@ -572,10 +572,10 @@ EXTRA_PROGRAMS = symphony symphony_m symphony_m_tm symphony_m_tm_lp \
 
 bin_PROGRAMS = $(WHATTOMAKEBINS)
 
-symphony_SOURCES = $(MAIN_SRC) symphony.h $(libSymApplStubs_la_SOURCES)
+symphony_SOURCES = $(MAIN_SRC) symphony.h
 #symphony_DEPENDENCIES = $(SYMLDADD) libSym.la
-symphony_CPPFLAGS = $(APPLCPPFLAGS)
-symphony_LDADD = libSym.la $(LDADD) $(ADDLIBS)
+symphony_CPPFLAGS = $(SYMCPPFLAGS)
+symphony_LDADD = libSym.la $(LDADD) $(ADDLIBS) libSymApplStubs.la
 symphony_DEPENDENCIES = libSym.la $(DEPENDENCIES)
 symphony_LINK = $(SYMLINK)
 
