@@ -1792,14 +1792,6 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
    FREE(rngval);
    FREE(is_int);
    FREE(nz_lowerlevel_row);
-   /* TODO: Is it good to free infubind, inflbind, ifubsofar, inflbsofar here? */
-   FREE(prob->inflbsofar);
-   FREE(prob->infubsofar);
-   FREE(prob->inflbind);
-   FREE(prob->infubind);
-   FREE(prob->matval_row);
-   FREE(prob->matind_row);
-   FREE(prob->matbeg_row);
 
    return (FUNCTION_TERMINATED_NORMALLY);
 }

@@ -66,9 +66,15 @@ typedef struct USER_PROBLEM{
     * Note that data read from mps file is not the final problem that
     * is loaded into SYMPHONY.
     * These parameters are used in creating final problem data */
-   int             *matbeg_row; /* */
-   int             *matind_row; /* */
-   double          *matval_row; /* */
+   int             *matbeg_row; /* Initially, row-ordered format is stored from
+                                   the input file. Finally, rearranged upper-
+                                   and lower-level rows are stored. */
+   int             *matind_row; /* Initially, row-ordered format is stored from
+                                   the input file. Finally, rearranged upper-
+                                   and lower-level rows are stored. */
+   double          *matval_row; /* Initially, row-ordered format is stored from
+                                   the input file. Finally, rearranged upper-
+                                   and lower-level rows are stored. */
    int              ubinfty;    /* number of infinity UBs */
    int              lbinfty;    /* number of -infinity LBs */
    int             *infubsofar; /* number of infinite UBs so far */
