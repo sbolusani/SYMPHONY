@@ -922,8 +922,8 @@ int user_rearrange_mat_vec(user_problem *prob) {
 
    /* Fill out row ordered arrays w.r.t. rearrangement */
    // Initially, create temporary arrays upon rearranging entire rows
-   memset(temp_matrix_indices, 0, sizeof(temp_matrix_indices));
-   memset(temp_matrix_values, 0, sizeof(temp_matrix_values));
+   memset(temp_matrix_indices, 0, ISIZE * nz);
+   memset(temp_matrix_values, 0, DSIZE * nz);
    counter = 0;
    counter2 = 0;
    for (i = 0; i < m; i++) {
@@ -1758,7 +1758,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
    memcpy(prob->mip->rhs, rhs, DSIZE * prob->mip->m);
    memcpy(prob->mip->sense, sense, CSIZE * prob->mip->m);
 //   memset(prob->mip->rngval, 0, DSIZE * m);
-   memset(prob->mip->rngval, 0, sizeof(prob->mip->rngval));                     // TODO: Fix this assumption.
+   memset(prob->mip->rngval, 0, DSIZE * prob->mip->m);                     // TODO: Fix this assumption.
    memcpy(prob->mip->ub, ub, DSIZE * prob->mip->n);
    memcpy(prob->mip->lb, lb, DSIZE * prob->mip->n);
    memcpy(prob->mip->is_int, is_int, CSIZE * prob->mip->n);
