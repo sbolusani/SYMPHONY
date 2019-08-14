@@ -637,7 +637,7 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
    memcpy(prob->mip->obj, obj, DSIZE * prob->mip->n);
    memcpy(prob->mip->rhs, rhs, DSIZE * prob->mip->m);
    memcpy(prob->mip->sense, sense, CSIZE * prob->mip->m);
-   memset(prob->mip->rngval, 0, sizeof(prob->mip->rngval));                     // TODO: Fix this assumption.
+   memset(prob->mip->rngval, 0, DSIZE * prob->mip->m);                     // TODO: Fix this assumption.
    memcpy(prob->mip->ub, ub, DSIZE * prob->mip->n);
    memcpy(prob->mip->lb, lb, DSIZE * prob->mip->n);
    memcpy(prob->mip->is_int, is_int, CSIZE * prob->mip->n);
@@ -1136,7 +1136,7 @@ int user_preprocess_single_level_prob(user_problem *prob) {
        Variable bound tightening of original cols
 \*===========================================================================*/
 
-int user_orig_col_bound_tightening(user_problem *prob) {
+void user_orig_col_bound_tightening(user_problem *prob) {
 
    //SYMPHONY environment
    sym_environment *env = sym_open_environment();
@@ -1150,11 +1150,10 @@ int user_orig_col_bound_tightening(user_problem *prob) {
 
    //Get certain data for the given instance
    warm_start_desc * ws;
-   int num_cols, num_rows, i;
+   int num_cols, i;
    double *orig_lb, *orig_ub, new_lb, new_ub, etol = 1e-6;
 
    num_cols = prob->mip->n;
-   num_rows = prob->mip->m;
    orig_lb = prob->mip->lb;
    orig_ub = prob->mip->ub;
 
@@ -1815,7 +1814,7 @@ int user_preprocess_bilevel_prob(user_problem *prob) {
        Variable bound tightening
 \*===========================================================================*/
 
-int user_col_bound_tightening(user_problem *prob) {
+void user_col_bound_tightening(user_problem *prob) {
 
    //SYMPHONY environment
    sym_environment *env = sym_open_environment();
@@ -1829,13 +1828,12 @@ int user_col_bound_tightening(user_problem *prob) {
 
    //Get certain data for the given instance
    warm_start_desc * ws;
-   int orig_num_cols, num_cols, num_rows, i, *ccind;
+   int orig_num_cols, num_cols, i, *ccind;
    double *orig_lb, *orig_ub, new_lb, new_ub, etol = 1e-6;
    char *sense;
 
    orig_num_cols = prob->orig_colnum;
    num_cols = prob->mip->n;
-   num_rows = prob->mip->m;
    ccind = prob->ccind;
    orig_lb = prob->mip->lb;
    orig_ub = prob->mip->ub;
