@@ -380,7 +380,7 @@ void generate_disjunctive_cuts(user_problem *prob, int varnum,
          row_ind = i;
          disjMat->appendRow(row_size, &row_ind, &row_val);
          num_disjMat_rows++;
-         disjRhs_val[disjRhs_size] = prhs[i];
+         disjRhs_val[disjRhs_size] = pub[i];
          disjRhs_ind[disjRhs_size] = disjRhs_size;
          disjRhs_size++;
       }
@@ -392,7 +392,7 @@ void generate_disjunctive_cuts(user_problem *prob, int varnum,
          row_ind = i;
          disjMat->appendRow(row_size, &row_ind, &row_val);
          num_disjMat_rows++;
-         disjRhs_val[disjRhs_size] = prhs[i];
+         disjRhs_val[disjRhs_size] = plb[i];
          disjRhs_ind[disjRhs_size] = disjRhs_size;
          disjRhs_size++;
       }
