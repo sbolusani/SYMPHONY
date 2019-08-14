@@ -296,7 +296,7 @@ int user_io(void *user)
 int user_start_heurs(void *user, double *ub, double *ub_estimate)
 {
    /* This gives you access to the user data structure. */
-   user_problem *prob = (user_problem *) user;
+   //user_problem *prob = (user_problem *) user;
 
    return(USER_DEFAULT);
 }
@@ -311,7 +311,7 @@ int user_start_heurs(void *user, double *ub, double *ub_estimate)
 int user_init_draw_graph(void *user, int dg_id)
 {
    /* This gives you access to the user data structure. */
-   user_problem *prob = (user_problem *) user;
+   //user_problem *prob = (user_problem *) user;
 
    return(USER_DEFAULT);
 }
@@ -388,7 +388,7 @@ int user_receive_feasible_solution(void *user, int msgtag, double cost,
 				   int numvars, int *indices, double *values)
 {
    /* This gives you access to the user data structure. */
-   user_problem *prob = (user_problem *) user;
+   //user_problem *prob = (user_problem *) user;
 
    return(USER_DEFAULT);
 }
@@ -464,7 +464,7 @@ int user_send_lp_data(void *user, void **user_lp)
 int user_send_cg_data(void *user, void **user_cg)
 {
    /* This gives you access to the user data structure. */
-   user_problem *prob = (user_problem *) user;
+   //user_problem *prob = (user_problem *) user;
 
 #if defined(COMPILE_IN_TM) && defined(COMPILE_IN_LP) && defined (COMPILE_IN_CG)
    /* This is is the case when we are copying data directly because
@@ -507,7 +507,7 @@ int user_send_cg_data(void *user, void **user_cg)
 int user_send_cp_data(void *user, void **user_cp)
 {
    /* This gives you access to the user data structure. */
-   user_problem *prob = (user_problem *) user;
+   //user_problem *prob = (user_problem *) user;
 
 #if defined(COMPILE_IN_TM) && defined(COMPILE_IN_LP) && defined (COMPILE_IN_CP)
    /* This is is the case when we are copying data directly because
@@ -538,7 +538,7 @@ int user_send_cp_data(void *user, void **user_cp)
 int user_process_own_messages(void *user, int msgtag)
 {
    /* This gives you access to the user data structure. */
-   user_problem *prob = (user_problem *) user;
+   //user_problem *prob = (user_problem *) user;
 
    switch (msgtag){
     case 0:
