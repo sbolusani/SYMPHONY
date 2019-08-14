@@ -80,15 +80,19 @@ int user_find_cuts(void *user, int varnum, int iter_num, int level,
 {
    user_problem *prob = (user_problem *) user;
 
-   /* Here, we add an explicit cut that doesn't have a special packed form.
-      This is the easiest way to add cuts, but may be inefficient in parallel.
-   */
+   if (prob->par.user_cuts) {
+      /* Here, we add an explicit cut that doesn't have a special packed form.
+         This is the easiest way to add cuts, but may be inefficient in parallel.
+       */
 
-   /* Generate and add disjunctive cuts based on complementarity conditions */
-   generate_disjunctive_cuts(prob, varnum, objval, indices, values,
-		   etol, num_cuts, alloc_cuts, cuts);
+      /* Generate and add disjunctive cuts based on complementarity conditions */
+      generate_disjunctive_cuts(prob, varnum, objval, indices, values,
+            etol, num_cuts, alloc_cuts, cuts);
 
-   return(USER_SUCCESS);
+      return(USER_SUCCESS);
+   } else {
+      return(USER_DEFAULT);
+   }
 }
 
 /*===========================================================================*/

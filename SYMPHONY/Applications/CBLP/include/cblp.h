@@ -28,6 +28,7 @@ typedef struct USER_PARAMETERS{
       level instance (0) */
    // TODO: Suresh - this is kind of redundant with auxfile
    bool             bilevel;
+   bool             user_cuts;      /* Whether to generate user cuts */
    int              test;
    char             test_dir[MAX_FILE_NAME_LENGTH +1]; /* Test files directory */
 }user_parameters;

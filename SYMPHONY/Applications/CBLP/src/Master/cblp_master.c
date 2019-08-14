@@ -52,14 +52,15 @@
 \*===========================================================================*/
 
 void user_usage(void){
-  printf("master [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\n",
+  printf("master [ -H ] [ -F file ] \n\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\n",
 	 "-H: help (solver-specific switches)",
 	 "-F model: model should be read in from file 'model'",
 	 "          (MPS format is assumed unless -D is also present)",
 	 "-X auxfile: auxiliary information for the bilevel application when 'model'", 
-    "             is a bilevel instance should be read in from file 'auxfile'",
-    "-B bilevel: indicator representing if 'model' is a bilevel instance (1) or a",
-    "             single level instance (0):-  default value = 0",
+         "             is a bilevel instance should be read in from file 'auxfile'",
+         "-B bilevel: indicator representing if 'model' is a bilevel instance (1) or a",
+         "             single level instance (0):-  default value = 0",
+         "-C user_cuts: indicator whether user cuts need to be generated or not",
 	 "-D data: model is in AMPL format and data is in file 'data'");
 }
 
@@ -99,6 +100,7 @@ int user_readparams(void *user, char *filename, int argc, char **argv)
 
    // default values
    par->bilevel = 0;
+   par->user_cuts = 0;
    par->auxfile[MAX_FILE_NAME_LENGTH] = ' ';
 
    // Suresh: added following two parameters for check_lp_validity function
@@ -131,6 +133,9 @@ int user_readparams(void *user, char *filename, int argc, char **argv)
          }
          else if (strcmp(key, "bilevel") == 0){
             READ_INT_PAR(par->bilevel);
+         }
+         else if (strcmp(key, "user_cuts") == 0){
+            READ_INT_PAR(par->user_cuts);
          }
 
          /************************* cutgen parameters ***************************/
@@ -192,14 +197,27 @@ EXIT:
          case 'B':
             if (i < argc - 1){
                if (!sscanf(argv[i+1], "%i", &tmpi)){
-                  printf("Warning: Missing argument to command-line switch -%c\n",
+                  printf("Warning: Missing argument to command-line switch -%c\n\n",
                         c);
                }else{
                   i++;
                   par->bilevel = tmpi;
                }
             }else{
-               printf("Warning: Missing argument to command-line switch -%c\n",c);
+               printf("Warning: Missing argument to command-line switch -%c\n\n",c);
+            }
+            break;
+         case 'C':
+            if (i < argc - 1){
+               if (!sscanf(argv[i+1], "%i", &tmpi)){
+                  printf("Warning: Missing argument to command-line switch -%c\n\n",
+                        c);
+               }else{
+                  i++;
+                  par->user_cuts = tmpi;
+               }
+            }else{
+               printf("Warning: Missing argument to command-line switch -%c\n\n",c);
             }
             break;
       };
