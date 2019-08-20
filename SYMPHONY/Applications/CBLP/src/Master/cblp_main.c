@@ -372,7 +372,7 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
 
    /* The original upper level variables */
    for (i = 0; i < num_upperlevel_vars; i++) {
-      is_int[i] = FALSE;
+      is_int[i] = false;
       ub[i] = prob->mip->ub[i];
       lb[i] = prob->mip->lb[i];
       env->mip->colname[i] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -381,7 +381,7 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
    }
    /* The original lower level variables */
    for (; i < prob->mip->n; i++) {
-      is_int[i] = FALSE;
+      is_int[i] = false;
       ub[i] = prob->infty;
       lb[i] = -prob->infty;
       env->mip->colname[i] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -390,7 +390,7 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
    }
    /* The duals on original lower level constraints */
    for (;i < prob->mip->n + prob->mip->m; i++){
-      is_int[i] = FALSE;
+      is_int[i] = false;
       if (prob->mip->sense[i - prob->mip->n] == 'L') {
          ub[i] = 0;
          lb[i] = -prob->infty;
@@ -414,7 +414,7 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
          continue;
       }
       index = prob->mip->n + prob->mip->m + ((j - num_upperlevel_vars) - (prob->infubsofar[j] - prob->infubsofar[num_upperlevel_vars]));
-      is_int[index] = FALSE;
+      is_int[index] = false;
       ub[index] = 0.0;
       lb[index] = -prob->infty;
       env->mip->colname[index] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -432,7 +432,7 @@ int user_load_problem(sym_environment *env, user_problem *prob) {
          continue;
       }
       index = prob->mip->n + prob->mip->m + num_lowerlevel_dual_ubvars + ((j - num_upperlevel_vars) - (prob->inflbsofar[j] - prob->inflbsofar[num_upperlevel_vars]));
-      is_int[index] = FALSE;
+      is_int[index] = false;
       ub[index] = prob->infty;
       lb[index] = 0.0;
       env->mip->colname[index] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -1430,7 +1430,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
 
    /* The original upper level variables */
    for (i = 0; i < num_upperlevel_vars; i++) {
-      is_int[i] = FALSE;
+      is_int[i] = false;
       ub[i] = prob->mip->ub[i];
       lb[i] = prob->mip->lb[i];
       env->mip->colname[i] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -1439,7 +1439,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
    }
    /* The original lower level variables */
    for (; i < prob->mip->n; i++) {
-      is_int[i] = FALSE;
+      is_int[i] = false;
       ub[i] = prob->infty;
       lb[i] = -prob->infty;
       env->mip->colname[i] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -1449,7 +1449,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
    /* The duals on original lower level constraints */
    if (aux->sense_lower_obj > 0) {
       for (;i < prob->mip->n + prob->mip->m - num_upperlevel_cons; i++) {
-         is_int[i] = FALSE;
+         is_int[i] = false;
          if (prob->mip->sense[i - prob->mip->n + num_upperlevel_cons] == 'L') {
             ub[i] = 0;
             lb[i] = -prob->infty;
@@ -1469,7 +1469,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
       }
    } else {
       for (;i < prob->mip->n + prob->mip->m - num_upperlevel_cons; i++) {
-         is_int[i] = FALSE;
+         is_int[i] = false;
          if (prob->mip->sense[i - prob->mip->n + num_upperlevel_cons] == 'L') {
             ub[i] = prob->infty;
             lb[i] = 0;
@@ -1496,7 +1496,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
             continue;
          }
          index = prob->mip->n + (prob->mip->m - num_upperlevel_cons) + ((j - num_upperlevel_vars) - (prob->infubsofar[j] - prob->infubsofar[num_upperlevel_vars]));
-         is_int[index] = FALSE;
+         is_int[index] = false;
          ub[index] = 0.0;
          lb[index] = -prob->infty;
          env->mip->colname[index] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -1513,7 +1513,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
             continue;
          }
          index = prob->mip->n + (prob->mip->m - num_upperlevel_cons) + ((j - num_upperlevel_vars) - (prob->infubsofar[j] - prob->infubsofar[num_upperlevel_vars]));
-         is_int[index] = FALSE;
+         is_int[index] = false;
          ub[index] = prob->infty;
          lb[index] = 0.0;
          env->mip->colname[index] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -1533,7 +1533,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
             continue;
          }
          index = prob->mip->n + (prob->mip->m - num_upperlevel_cons) + num_lowerlevel_dual_ubvars + ((j - num_upperlevel_vars) - (prob->inflbsofar[j] - prob->inflbsofar[num_upperlevel_vars]));
-         is_int[index] = FALSE;
+         is_int[index] = false;
          ub[index] = prob->infty;
          lb[index] = 0.0;
          env->mip->colname[index] = (char *) malloc(CSIZE * MAX_NAME_SIZE);
@@ -1550,7 +1550,7 @@ int user_generate_bilevel_problem(sym_environment *env, user_problem *prob) {
             continue;
          }
          index = prob->mip->n + (prob->mip->m - num_upperlevel_cons) + num_lowerlevel_dual_ubvars + ((j - num_upperlevel_vars) - (prob->inflbsofar[j] - prob->inflbsofar[num_upperlevel_vars]));
-         is_int[index] = FALSE;
+         is_int[index] = false;
          ub[index] = 0.0;
          lb[index] = -prob->infty;
          env->mip->colname[index] = (char *) malloc(CSIZE * MAX_NAME_SIZE);

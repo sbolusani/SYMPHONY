@@ -25,14 +25,7 @@
 #include "sym_master.h"
 
 /* User include files */
-#include "cblp.h"
-
-/*===========================================================================*/
-
-void generate_disjunctive_cuts(user_problem *prob, int varnum,
-		   double objval, int *indices, double *values,
-		   double etol, int *num_cuts, int *alloc_cuts,
-		   cut_data ***cuts);
+#include "cblp_cg.h"
 
 /*===========================================================================*\
  * This file contains user-written functions used by the cut generator
@@ -80,7 +73,12 @@ int user_find_cuts(void *user, int varnum, int iter_num, int level,
 {
    user_problem *prob = (user_problem *) user;
 
-   if (prob->par.user_cuts) {
+   if (!prob->par.user_cuts) {
+
+      return(USER_DEFAULT);
+
+   } else if ((prob->par.user_cuts == 2) || ((prob->par.user_cuts == 1) && !index)) {
+
       /* Here, we add an explicit cut that doesn't have a special packed form.
          This is the easiest way to add cuts, but may be inefficient in parallel.
        */
@@ -89,9 +87,9 @@ int user_find_cuts(void *user, int varnum, int iter_num, int level,
       generate_disjunctive_cuts(prob, varnum, objval, indices, values,
             etol, num_cuts, alloc_cuts, cuts);
 
+      // TODO: Add other cuts as well?
+
       return(USER_SUCCESS);
-   } else {
-      return(USER_DEFAULT);
    }
 }
 
@@ -168,7 +166,7 @@ void generate_disjunctive_cuts(user_problem *prob, int varnum,
    */
    sym_environment *env = sym_open_environment();
    int n = 0, m = 0, num_upper_eq_cons = 0, num_lower_eq_cons = 0, counter;
-   int *matbeg, *matind;
+   int num_lower_col_bound_eq_cons = 0, *matbeg, *matind;
    double *lb, *ub, *obj, *rngval, *rhs, *matval;
    char *sense;
    char *psense = prob->mip->sense;
@@ -186,12 +184,20 @@ void generate_disjunctive_cuts(user_problem *prob, int varnum,
          num_lower_eq_cons += 1;
       }
    }
+   // Finding # of lower-level col. equality cons.
+   for (i = orig_rownum; i < (prob->mip->m - num_lower_vars); i++) {
+      if (psense[i] == 'E') {
+         num_lower_col_bound_eq_cons += 1;
+      }
+   }
 
    /* Number of variables in CGLP */
    // # of cons. in the current single-level version of the CBLP
    n = prob->mip->m;
    // Doubling # of upper and lower eq. cons. to change them into ineq. cons
    n += num_upper_eq_cons + num_lower_eq_cons;
+   // Doubling # of lower col. bound eq. cons. to change them into ineq. cons
+   n += num_lower_col_bound_eq_cons;
    // Doubling # of original equality dual cons. to change them into ineq. cons
    n += num_lower_vars;
    // # of cons. corresponding to bounds second-level dual vars.

@@ -60,7 +60,8 @@ void user_usage(void){
          "             is a bilevel instance should be read in from file 'auxfile'",
          "-B bilevel: indicator representing if 'model' is a bilevel instance (1) or a",
          "             single level instance (0):-  default value = 0",
-         "-C user_cuts: indicator whether user cuts need to be generated or not",
+         "-C user_cuts: indicator whether user cuts need to be generated always (2) or",
+         "             in root node only (1) or not (0):-  default value = 0",
 	 "-D data: model is in AMPL format and data is in file 'data'");
 }
 
