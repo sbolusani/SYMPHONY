@@ -5,7 +5,7 @@
 /* SYMPHONY was jointly developed by Ted Ralphs (ted@lehigh.edu) and         */
 /* Laci Ladanyi (ladanyi@us.ibm.com).                                        */
 /*                                                                           */
-/* (c) Copyright 2000-2015 Ted Ralphs. All Rights Reserved.                  */
+/* (c) Copyright 2000-2019 Ted Ralphs. All Rights Reserved.                  */
 /*                                                                           */
 /* This software is licensed under the Eclipse Public License. Please see    */
 /* accompanying file for terms.                                              */
@@ -247,7 +247,7 @@ int fathom_branch(lp_prob *p)
    check_bounds(p, &termcode);
    if (termcode == LP_D_UNBOUNDED) {
       PRINT(verbosity, 1, ("Feasibility lost -- "));
-      if (fathom(p, FALSE)) {
+      if (fathom(p, FALSE, FALSE)) {
          comp_times->communication += used_time(&p->tt);
          return(FUNCTION_TERMINATED_NORMALLY);
       }
@@ -281,12 +281,12 @@ int fathom_branch(lp_prob *p)
       //set time limit here      
 
       if (p->tm->par.time_limit >= 0.0 &&
-            (timeleft = p->tm->par.time_limit - wall_clock(NULL) + p->tm->start_time) <= 0.0) {
-         if (fathom(p, TRUE)){  //send in true for interrupted node
-            return(FUNCTION_TERMINATED_NORMALLY);
-         }else{
-            return(FUNCTION_TERMINATED_ABNORMALLY);
-         }
+	  (timeleft = p->tm->par.time_limit - wall_clock(NULL) + p->tm->start_time) <= 0.0) { 
+         if (fathom(p, TRUE, TRUE)){  //send in true for interrupted node
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    return(FUNCTION_TERMINATED_ABNORMALLY);
+	 }
       }
       
       if (timeleft > 0.0){
@@ -297,12 +297,12 @@ int fathom_branch(lp_prob *p)
       // set itlim here if we are in restricted search heuristic
 
       if(rs_mode_enabled &&
-            (iterleft = p->tm->par.rs_lp_iter_limit - p->tm->lp_stat.lp_iter_num) <= 0) {
-         if (fathom(p, TRUE)){  //send in true for interrupted node
-            return(FUNCTION_TERMINATED_NORMALLY);
-         }else{
-            return(FUNCTION_TERMINATED_ABNORMALLY);
-         }
+	 (iterleft = p->tm->par.rs_lp_iter_limit - p->tm->lp_stat.lp_iter_num) <= 0) {
+         if (fathom(p, TRUE, FALSE)){  //send in true for interrupted node
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    return(FUNCTION_TERMINATED_ABNORMALLY);
+	 }
       }
 
       if (iterleft > 0){
@@ -436,39 +436,38 @@ OPENMP_ATOMIC_UPDATE
          }
       }
       switch (termcode){
-         case LP_D_INFEASIBLE:
-            /* this is impossible (?) as of now */
-            return(ERROR__DUAL_INFEASIBLE);
-         case LP_D_ITLIM:
-         case LP_TIME_LIMIT:
-            /* now, we set time limit - solver returns the same termcode with itlim */
-            /* also, we might set iter limit if we are in search heuristics */
-            if (fathom(p, TRUE)){  //send in true for interrupted node
-               return(FUNCTION_TERMINATED_NORMALLY);
-            }else{
-               return(FUNCTION_TERMINATED_ABNORMALLY);
-            }
-         case LP_ABANDONED:
-            if (!rs_mode_enabled){
-               printf("####### Unexpected termcode: %i \n", termcode);
-            }
-            if (p->par.try_to_recover_from_error && (++num_errors == 1)){
-               /* Try to resolve it from scratch */
-               if (!rs_mode_enabled){
-                  printf("####### Trying to recover by resolving from scratch...\n");
-               }
-               continue;
-            }else{
-               if (!rs_mode_enabled){   
-                  char name[50] = "";
-                  printf("####### Recovery failed. %s%s",
-                        "LP solver is having numerical difficulties :(.\n",
-                        "####### Dumping current LP to MPS file and exiting.\n\n");
-                  sprintf(name, "matrix.%i.%i", p->bc_index, p->iter_num);
-                  write_mps(lp_data, name);
-               }
-               return(ERROR__NUMERICAL_INSTABILITY);
-            }
+       case LP_D_INFEASIBLE: /* this is impossible (?) as of now */
+	 return(ERROR__DUAL_INFEASIBLE);
+       case LP_D_ITLIM:
+       case LP_TIME_LIMIT:
+	 /* now, we set time limit - solver returns the same termcode with itlim */
+	 /* also, we might set iter limit if we are in search heuristics */
+	 if (fathom(p, TRUE, FALSE)){  //send in true for interrupted node
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    return(FUNCTION_TERMINATED_ABNORMALLY);
+	 }
+       case LP_ABANDONED:
+	 if (!rs_mode_enabled){
+	    printf("####### Unexpected termcode: %i \n", termcode);
+	 }
+	 if (p->par.try_to_recover_from_error && (++num_errors == 1)){
+	    /* Try to resolve it from scratch */
+	    if (!rs_mode_enabled){
+	       printf("####### Trying to recover by resolving from scratch...\n");
+	    }
+	    continue;
+	 }else{
+	    if (!rs_mode_enabled){   
+	       char name[50] = "";
+	       printf("####### Recovery failed. %s%s",
+		      "LP solver is having numerical difficulties :(.\n",
+		      "####### Dumping current LP to MPS file and exiting.\n\n");
+	       sprintf(name, "matrix.%i.%i", p->bc_index, p->iter_num);
+	       write_mps(lp_data, name);
+	    }
+	    return(ERROR__NUMERICAL_INSTABILITY);
+	 }
 
          case LP_D_UNBOUNDED: //the primal problem is infeasible 
             /* 	  {char aname[50] = ""; //Anahita */
@@ -500,47 +499,52 @@ OPENMP_ATOMIC_UPDATE
                PRINT(verbosity, 1, ("Terminating due to high cost -- "));
             }else{ /* optimal and not too high cost */
 #ifdef COMPILE_IN_LP
-               p->tm->active_nodes[p->proc_index]->lower_bound = lp_data->objval;
-               if (p->node_iter_num < 2 && p->bc_index > 0 && 
-                     p->par.should_use_rel_br) {
-                  update_pcost(p);
-               }
-               if (cuts > 0) {
-                  p->lp_stat.cuts_added_to_lps += cuts;
-               }
-               if (p->node_iter_num > 0 && p->bc_level > 0) {
-                  if (cuts > 0) {
-                     p->lp_stat.num_cuts_added_in_path += cuts;
-                  }
-                  if (p->lp_stat.avg_cuts_obj_impr_in_path > 0) {
-                     p->lp_stat.avg_cuts_obj_impr_in_path = 
-                        (p->lp_stat.avg_cuts_obj_impr_in_path *
-                         (p->lp_stat.num_cut_iters_in_path-1) + p->lp_data->objval - 
-                         obj_before_cuts)/p->lp_stat.num_cut_iters_in_path;
-                  }
-               }
-
-               if(p->node_iter_num > 1){
-                  p->lp_stat.end_objval = lp_data->objval;
-               }else{
-                  p->lp_stat.end_objval = p->lp_stat.start_objval =
-                     lp_data->objval;
-               }
-
-               obj_before_cuts = lp_data->objval;
-               comp_times->lp += used_time(&p->tt);
+#ifdef DO_TESTS
+            if (lp_data->objval < p->tm->lb - .001 && p->bc_index > 0){
+               printf("#####Warning: lower bound corruption detected\n");
+            }
 #endif
-               break;
+	    p->tm->active_nodes[p->proc_index]->lower_bound = lp_data->objval;
+            if (p->node_iter_num < 2 && p->bc_index > 0 && 
+                  p->par.should_use_rel_br) {
+               update_pcost(p);
             }
-            comp_times->lp += used_time(&p->tt);
-            if (fathom(p, (termcode != LP_D_UNBOUNDED))){
-               comp_times->communication += used_time(&p->tt);
-               return(FUNCTION_TERMINATED_NORMALLY);
+            if (cuts > 0) {
+               p->lp_stat.cuts_added_to_lps += cuts;
+            }
+            if (p->node_iter_num > 0 && p->bc_level > 0) {
+               if (cuts > 0) {
+                  p->lp_stat.num_cuts_added_in_path += cuts;
+               }
+               if (p->lp_stat.avg_cuts_obj_impr_in_path > 0) {
+                  p->lp_stat.avg_cuts_obj_impr_in_path = 
+                     (p->lp_stat.avg_cuts_obj_impr_in_path *
+                      (p->lp_stat.num_cut_iters_in_path-1) + p->lp_data->objval - 
+                      obj_before_cuts)/p->lp_stat.num_cut_iters_in_path;
+               }
+            }
+
+            if(p->node_iter_num > 1){
+               p->lp_stat.end_objval = lp_data->objval;
             }else{
-               first_in_loop = FALSE;
-               comp_times->communication += used_time(&p->tt);
-               continue;
+               p->lp_stat.end_objval = p->lp_stat.start_objval =
+                  lp_data->objval;
             }
+
+            obj_before_cuts = lp_data->objval;
+            comp_times->lp += used_time(&p->tt);
+#endif
+            break;
+	 }
+	 comp_times->lp += used_time(&p->tt);
+	 if (fathom(p, (termcode != LP_D_UNBOUNDED), FALSE)){
+	    comp_times->communication += used_time(&p->tt);
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    first_in_loop = FALSE;
+	    comp_times->communication += used_time(&p->tt);
+	    continue;
+	 }
       }
 
       /* If come to here, the termcode must have been OPTIMAL and the
@@ -608,13 +612,13 @@ OPENMP_ATOMIC_UPDATE
 
       comp_times->lp += used_time(&p->tt);
       if (cuts < 0){ /* i.e. feasible solution is found */
-         if (fathom(p, TRUE)){
-            return(FUNCTION_TERMINATED_NORMALLY);
-         }else{
-            first_in_loop = FALSE;
-            check_ub(p);
-            continue;
-         }
+	 if (fathom(p, TRUE, FALSE)){
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    first_in_loop = FALSE;
+	    check_ub(p);
+	    continue;
+	 }
       }
 
 
@@ -674,38 +678,38 @@ OPENMP_ATOMIC_UPDATE
             comp_times->strong_branching += used_time(&p->tt);
             return(FUNCTION_TERMINATED_NORMALLY);
 
-         case BRANCHING_INF_NODE:
-            comp_times->strong_branching += used_time(&p->tt);
-            if (fathom(p, FALSE)){
-               return(FUNCTION_TERMINATED_NORMALLY);
-            }else{
-               return(FUNCTION_TERMINATED_ABNORMALLY);
-            }
+       case BRANCHING_INF_NODE:
+	 comp_times->strong_branching += used_time(&p->tt);
+	 if (fathom(p, FALSE, FALSE)){
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    return(FUNCTION_TERMINATED_ABNORMALLY);
+	 }
 
-         case ERROR__NO_BRANCHING_CANDIDATE: /* Something went wrong */
-            return(ERROR__NO_BRANCHING_CANDIDATE);
+       case ERROR__NO_BRANCHING_CANDIDATE: /* Something went wrong */
+	 return(ERROR__NO_BRANCHING_CANDIDATE);
 
-         case FEAS_SOL_FOUND:
-            PRINT(verbosity,2,("solution found before branching\n"));
-            if(p->par.find_first_feasible){
-               if(fathom(p, TRUE)){  //send in true for interrupted node
-                  return(FUNCTION_TERMINATED_NORMALLY);
-               }else{
-                  return(FUNCTION_TERMINATED_ABNORMALLY);
-               }
+       case FEAS_SOL_FOUND:
+         PRINT(verbosity,2,("solution found before branching\n"));
+	 if(p->par.find_first_feasible){
+	   if(fathom(p, TRUE, FALSE)){  //send in true for interrupted node
+	     return(FUNCTION_TERMINATED_NORMALLY);
+	   }else{
+	     return(FUNCTION_TERMINATED_ABNORMALLY);
+	   }
+	 }
+       default: /* the return value is the number of cuts added */
+	 if (verbosity > 2){
+	    printf("Continue with this node.");
+	    if (cuts > 0)
+	       printf(" %i cuts added altogether in iteration %i\n",
+		      cuts, p->iter_num);
+            if (p->bound_changes_in_iter > 0) {
+               printf(" %i bounds added altogether in iteration %i\n",
+                     p->bound_changes_in_iter, p->iter_num);
             }
-         default: /* the return value is the number of cuts added */
-            if (verbosity > 2){
-               printf("Continue with this node.");
-               if (cuts > 0)
-                  printf(" %i cuts added altogether in iteration %i\n",
-                        cuts, p->iter_num);
-               if (p->bound_changes_in_iter > 0) {
-                  printf(" %i bounds added altogether in iteration %i\n",
-                        p->bound_changes_in_iter, p->iter_num);
-               }
-               printf("\n\n");
-            }
+	    printf("\n\n");
+	 }
 #ifdef DO_TESTS
             if (cuts == 0 && p->bound_changes_in_iter == 0){
                printf("Error! Told not to branch, but there are no new cuts or ");
@@ -737,21 +741,21 @@ OPENMP_ATOMIC_UPDATE
 
       if (gap_limit_reached || 
 	  (p->tm->par.time_limit >= 0.0 &&
-      wall_clock(NULL) - p->tm->start_time >= p->tm->par.time_limit)){
-         if (fathom(p, TRUE)){
-            return(FUNCTION_TERMINATED_NORMALLY);
-         }else{
-            return(FUNCTION_TERMINATED_ABNORMALLY);
-         }
-      } 
+	   wall_clock(NULL) - p->tm->start_time >= p->tm->par.time_limit)){
+	 if (fathom(p, TRUE, ((gap_limit_reached) ? FALSE : TRUE))){
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    return(FUNCTION_TERMINATED_ABNORMALLY);
+	 }
+      }
 #else
       if (p->par.time_limit >= 0.0 &&
-            wall_clock(NULL) - p->start_time >= p->par.time_limit){
-         if (fathom(p, TRUE)){
-            return(FUNCTION_TERMINATED_NORMALLY);
-         }else{
-            return(FUNCTION_TERMINATED_ABNORMALLY);
-         }
+	  wall_clock(NULL) - p->start_time >= p->par.time_limit){
+         if (fathom(p, TRUE, TRUE)){
+	    return(FUNCTION_TERMINATED_NORMALLY);
+	 }else{
+	    return(FUNCTION_TERMINATED_ABNORMALLY);
+	 }
       }
 #endif
    }
@@ -766,7 +770,7 @@ OPENMP_ATOMIC_UPDATE
 /* fathom() returns true if it has really fathomed the node, false otherwise
    (i.e., if it had added few variables) */
 
-int fathom(lp_prob *p, int primal_feasible)
+int fathom(lp_prob *p, int primal_feasible, int time_limit_reached)
 {
    LPdata *lp_data = p->lp_data;
    our_col_set *new_cols = NULL;
@@ -786,22 +790,26 @@ int fathom(lp_prob *p, int primal_feasible)
       PRINT(p->par.verbosity, 1,
             ("fathoming node (no more cols to check)\n\n"));
       if (primal_feasible){
-         switch (termcode){
-            case LP_OPT_FEASIBLE:
-               send_node_desc(p, FEASIBLE_PRUNED);
-               break;
-            case LP_OPTIMAL:
-               send_node_desc(p, OVER_UB_PRUNED);
-               break;
-            case LP_D_ITLIM:
-               send_node_desc(p, ITERATION_LIMIT);
-               break;
-            case LP_TIME_LIMIT:
-               send_node_desc(p, TIME_LIMIT);
-               break;
-            default:
-               send_node_desc(p, OVER_UB_PRUNED);
-               break;
+         if (time_limit_reached) {
+            send_node_desc(p, TIME_LIMIT);
+         } else {
+	    switch (termcode){
+	       case LP_OPT_FEASIBLE:
+	          send_node_desc(p, FEASIBLE_PRUNED);
+	          break;
+	       case LP_OPTIMAL:
+	          send_node_desc(p, OVER_UB_PRUNED);
+	          break;
+	       case LP_D_ITLIM:
+	          send_node_desc(p, ITERATION_LIMIT);
+	          break;
+	       case LP_TIME_LIMIT:
+	          send_node_desc(p, TIME_LIMIT);
+	          break;
+	       default:
+	          send_node_desc(p, OVER_UB_PRUNED);
+	          break;
+	    }
          }
       }else{
          send_node_desc(p, INFEASIBLE_PRUNED);
@@ -993,7 +1001,7 @@ int repricing(lp_prob *p)
 	    break;
 	 }
 	 comp_times->lp += used_time(&p->tt);
-	 if (fathom(p, (termcode != LP_D_UNBOUNDED))){
+	 if (fathom(p, (termcode != LP_D_UNBOUNDED), FALSE)){
 	    comp_times->communication += used_time(&p->tt);
 	    return(FUNCTION_TERMINATED_NORMALLY);
 	 }else{
@@ -1055,7 +1063,7 @@ int repricing(lp_prob *p)
 
       comp_times->lp += used_time(&p->tt);
       if (cuts < 0){ /* i.e. feasible solution is found */
-	 if (fathom(p, TRUE)){
+	 if (fathom(p, TRUE, FALSE)){
 	    comp_times->communication += used_time(&p->tt);
 	    return(FUNCTION_TERMINATED_NORMALLY);
 	 }else{
@@ -2463,7 +2471,7 @@ int generate_cgl_cuts_new(lp_prob *p, int *num_cuts, cut_data ***cuts,
 			     send_to_pool);
       
       should_stop_adding_cgl_cuts(p, i, &should_stop);
-      if(i < 0 && num_cuts > 0) should_stop = TRUE;
+      if(i < 0 && *num_cuts > 0) should_stop = TRUE;
       //}
       if (should_stop == TRUE) {
          break;

@@ -1,4 +1,4 @@
-SYMPHONY Version 5.6.15 README
+SYMPHONY Version 5.6.16 README
 =============================
 
 Welcome to SYMPHONY. SYMPHONY is distributed under the Eclipse Public License
@@ -25,6 +25,10 @@ installation and usage. Please see the documentation for more details.
 ******************************************************************************
 *                              INSTALLATION                                  *
 ******************************************************************************
+
+Binaries for most platforms are available for download from Bintray:
+
+https://bintray.com/coin-or/download/SYMPHONY
 
 If you downloaded a source distribution and would like instructions on
 building SYMPHONY or you downloaded a binary distribution and would like to
@@ -241,13 +245,34 @@ https://projects.coin-or.org/SYMPHONY/newticket
 
 Please note the version of SYMPHONY you are using when filing the ticket.
 
+ACKNOWLEDGEMENTS
+
+SYMPHONY was developed with support from
+
+* National Science Foundation (Grants CMMI-1435453, CMMI-0728011, DMI-0522796, DMI-0534862, DMS-9527124, CMMI-1130914)
+* Texas ATP Grant 97-3604-010
+* Cornell University
+* Lehigh University
+* Zuse Institute Berlin
+* Research Campus Modal "Mathematical Optimization and Data Analysis 
+Laboratories" funded by the German Federal Ministry of Education and Research
+(BMBF Grant 05M14ZAM) and by the DFG SFB/Transregio 154
+
 WHAT'S NEW
 ==========
+
+# Release 5.6.16
+  * Fix problem with appveyor configuration
 
 # Release 5.6.15
   * Fix for configuration issue with OpenMP when building with Visual Studio
     compiler under Msys2
-
+  * Fix for bugs in PVM version
+  * Fix for bugs in computing lower bounds
+  * Fix for compilation error with gcc 6
+  * Other minor fixes
+  * Enabling binary uploads with BinTray
+                
 # Release 5.6.14
   * Fixing small bug with re-setting environment in user applications.
   * Fixing some memory errors arising with applications when extra variables are used.

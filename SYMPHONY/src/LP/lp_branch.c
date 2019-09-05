@@ -5,7 +5,7 @@
 /* SYMPHONY was jointly developed by Ted Ralphs (ted@lehigh.edu) and         */
 /* Laci Ladanyi (ladanyi@us.ibm.com).                                        */
 /*                                                                           */
-/* (c) Copyright 2000-2015 Ted Ralphs. All Rights Reserved.                  */
+/* (c) Copyright 2000-2019 Ted Ralphs. All Rights Reserved.                  */
 /*                                                                           */
 /* This software is licensed under the Eclipse Public License. Please see    */
 /* accompanying file for terms.                                              */
@@ -278,13 +278,15 @@ int select_branching_object(lp_prob *p, int *cuts, branch_obj **candidate)
       double *bnd_val = lp_data->tmp2.d; //(double *)malloc (2*lp_data->n*DSIZE);
       int *bnd_ind = lp_data->tmp2.i1; //(int *)malloc (2*lp_data->n*ISIZE);
       char *bnd_sense = lp_data->tmp2.c; //(char *)malloc (2*lp_data->n*CSIZE);
-      int *up_violation_cnt = NULL, *down_violation_cnt = NULL, *violation_col_size = NULL;             
+      int *up_violation_cnt = NULL, *down_violation_cnt = NULL;
+      int *violation_col_size = NULL;             
       int num_bnd_changes = 0;
       double xval, floorx, ceilx, var_score;
-      int full_solves = 0, down_is_est, up_is_est, best_down_is_est, best_up_is_est, 
+      int full_solves = 0, down_is_est, up_is_est, best_down_is_est,
+          best_up_is_est,
           max_solves_since_impr = p->par.rel_br_cand_threshold, 
           stop_solving = FALSE, both_children_inf = FALSE, rel_up, 
-          rel_down, solves_since_impr = 0, best_one_child_inf = FALSE;
+	  rel_down, solves_since_impr = 0, best_one_child_inf = FALSE;
       int max_solves = p->par.rel_br_max_solves;
       double alpha = p->par.strong_branching_high_low_weight;
       double one_m_alpha = 1.0 - alpha;
@@ -301,40 +303,40 @@ int select_branching_object(lp_prob *p, int *cuts, branch_obj **candidate)
 
 
       // experimental - node-presolve 
-      if(p->par.use_branching_prep && cand_num > 1){
-         //prep_tighten_bounds(lp_data, &num_bnd_changes, bnd_val, bnd_ind, bnd_sense,
-         //	    row_ub, row_lb, &cand_fixed);
+      if (p->par.use_branching_prep && cand_num > 1){
+	 //prep_tighten_bounds(lp_data, &num_bnd_changes, bnd_val, bnd_ind, bnd_sense,
+	 //	    row_ub, row_lb, &cand_fixed);
 
-         if(prep_tighten_bounds(lp_data, &num_bnd_changes, bnd_val, bnd_ind, 
-                  bnd_sense, row_ub, row_lb, &cand_fixed) == PREP_INFEAS){
-            cand_num = 1;
-            FREE(bnd_val);
-            FREE(bnd_ind);
-            FREE(bnd_sense);
-            FREE(best_can);
-            FREE(candidates);
-            *candidate = NULL;
-            p->lp_stat.prep_nodes_pruned++;
-            set_itlim(lp_data, -1); //both limits should be set for hotstarts
-            return (DO_NOT_BRANCH__FATHOMED);
-         }else if(num_bnd_changes > 0){
-            p->lp_stat.prep_bnd_changes += num_bnd_changes; 
-            if(cand_fixed){
-               int c_ind, new_cand_num = 0;
-               int *new_cand_list = lp_data->tmp.i1; 
-               for(i = 0; i< cand_num; i++){
-                  c_ind = p->br_rel_cand_list[i];
-                  xval = lp_data->x[c_ind];
-                  if(vars[c_ind]->lb < xval && 
-                        vars[c_ind]->ub > xval){
-                     new_cand_list[new_cand_num] = c_ind;
-                     new_cand_num++;
-                  }
-               }
-               cand_num = new_cand_num;
-               memcpy(p->br_rel_cand_list, new_cand_list, ISIZE*cand_num);
-            }
-         }
+	 if(prep_tighten_bounds(lp_data, &num_bnd_changes, bnd_val, bnd_ind, bnd_sense,
+			       row_ub, row_lb, &cand_fixed) == PREP_INFEAS){
+ 	    cand_num = 1;
+	    FREE(bnd_val);
+	    FREE(bnd_ind);
+	    FREE(bnd_sense);
+	    FREE(best_can);
+	    FREE(candidates);
+	    *candidate = NULL;
+	    p->lp_stat.prep_nodes_pruned++;
+	    set_itlim(lp_data, -1); //both limits should be set for hotstarts
+	    return (DO_NOT_BRANCH__FATHOMED);
+	 }else if(num_bnd_changes > 0){
+	    p->lp_stat.prep_bnd_changes += num_bnd_changes; 
+	    if(cand_fixed){
+	       int c_ind, new_cand_num = 0;
+	       int *new_cand_list = lp_data->tmp.i1; 
+	       for(i = 0; i< cand_num; i++){
+		  c_ind = p->br_rel_cand_list[i];
+		  xval = lp_data->x[c_ind];
+		  if(vars[c_ind]->lb < xval && 
+		     vars[c_ind]->ub > xval){
+		     new_cand_list[new_cand_num] = c_ind;
+		     new_cand_num++;
+		  }
+	       }
+	       cand_num = new_cand_num;
+	       memcpy(p->br_rel_cand_list, new_cand_list, ISIZE*cand_num);
+	    }
+	 }
 
 
          if(p->par.use_branching_prep){//use_violation){ //}
@@ -2148,8 +2150,9 @@ int branch(lp_prob *p, int cuts)
    cut_data *cut;
    node_desc *desc;
    int termcode;
-   bc_node *node = p->tm->active_nodes[p->proc_index];
-   branch_obj *bobj = &node->bobj;
+#if defined(DO_TESTS) && defined(COMPILE_IN_LP)
+   branch_obj *bobj = &(p->tm->active_nodes[p->proc_index]->bobj);
+#endif
 
    termcode = select_branching_object(p, &cuts, &can);
 
@@ -2188,6 +2191,9 @@ int branch(lp_prob *p, int cuts)
    /* Send the branching information to the TM and inquire whether we
       should dive */
    p->comp_times.strong_branching += used_time(&p->tt);
+   /* 'keep' may be modified if children are pruned, but we need the original
+      value */
+   int old_keep = keep;
    send_branching_info(p, can, action, &keep);
    p->comp_times.communication += used_time(&p->tt);
 
@@ -2197,38 +2203,42 @@ int branch(lp_prob *p, int cuts)
       return(FATHOMED_NODE);
    }
 
+#if defined(DO_TESTS) && defined(COMPILE_IN_LP)
+   assert(can->rhs[old_keep] == bobj->cdesc[keep].rhs); 
+#endif
+   
    desc = p->desc;
-   switch (bobj->cdesc[keep].type){
+   switch (can->cdesc[old_keep].type){
       case CANDIDATE_VARIABLE:
-         p->branch_var = bobj->cdesc[keep].position;
-         p->branch_dir = bobj->cdesc[keep].sense;
-         var = lp_data->vars[branch_var = bobj->cdesc[keep].position];
-         switch (bobj->cdesc[keep].sense){
+         p->branch_var = can->cdesc[old_keep].position;
+         p->branch_dir = can->cdesc[old_keep].sense;
+         var = lp_data->vars[branch_var = can->cdesc[old_keep].position];
+         switch (can->cdesc[old_keep].sense){
             case 'E':
-               var->new_lb = var->new_ub = bobj->cdesc[keep].rhs;
-               var->lb = var->ub = bobj->cdesc[keep].rhs;
+               var->new_lb = var->new_ub = can->cdesc[old_keep].rhs;
+               var->lb = var->ub = can->cdesc[old_keep].rhs;
                break;
             case 'R':
-               var->new_lb = bobj->cdesc[keep].rhs; 
-               var->new_ub = var->lb + bobj->cdesc[keep].range;
-               var->lb = bobj->cdesc[keep].rhs; var->ub = var->lb + bobj->cdesc[keep].range;
+               var->new_lb = can->cdesc[old_keep].rhs; 
+               var->new_ub = var->lb + can->cdesc[old_keep].range;
+               var->lb = can->cdesc[old_keep].rhs; var->ub = var->lb + can->cdesc[old_keep].range;
                break;
             case 'L':
-               var->new_ub = bobj->cdesc[keep].rhs;
-               var->ub = bobj->cdesc[keep].rhs;
+               var->new_ub = can->cdesc[old_keep].rhs;
+               var->ub = can->cdesc[old_keep].rhs;
                break;
             case 'G':
-               var->new_lb = bobj->cdesc[keep].rhs;
-               var->lb = bobj->cdesc[keep].rhs;
+               var->new_lb = can->cdesc[old_keep].rhs;
+               var->lb = can->cdesc[old_keep].rhs;
                break;
          }
-         //printf("branching on %i %c %f %f\n", branch_var, bobj->cdesc[keep].sense, var->lb, var->ub);
-         change_col(lp_data, branch_var, bobj->cdesc[keep].sense, var->lb, var->ub);
+         //printf("branching on %i %c %f %f\n", branch_var, can->cdesc[old_keep].sense, var->lb, var->ub);
+         change_col(lp_data, branch_var, can->cdesc[old_keep].sense, var->lb, var->ub);
          lp_data->status[branch_var] |= VARIABLE_BRANCHED_ON;
          break;
       case SOS1_IMPLICIT:
-         for(int j = 0; j < bobj->cdesc[keep].sos_cnt; j++){
-            branch_var = bobj->cdesc[keep].sos_ind[j];
+         for(int j = 0; j < can->cdesc[old_keep].sos_cnt; j++){
+            branch_var = can->cdesc[old_keep].sos_ind[j];
             change_ub(lp_data, branch_var, 0.0);
             lp_data->vars[branch_var]->new_ub = 0.0;
             lp_data->vars[branch_var]->ub = 0.0;
@@ -2238,7 +2248,7 @@ int branch(lp_prob *p, int cuts)
          //printf("\n");
          break;
       case CANDIDATE_CUT_IN_MATRIX:
-         branch_row = bobj->cdesc[keep].position;
+         branch_row = can->cdesc[old_keep].position;
          cut = lp_data->rows[branch_row].cut;
          /* To maintain consistency with TM we have to fix a few more things if
             we had a non-base, new branching cut */
@@ -2302,14 +2312,14 @@ int branch(lp_prob *p, int cuts)
                stat[i] = SLACK_BASIC;
             }
          }
-         cut->rhs = bobj->cdesc[keep].rhs;
-         if ((cut->sense = bobj->cdesc[keep].sense) == 'R')
-            cut->range = bobj->cdesc[keep].range;
-         cut->branch = CUT_BRANCHED_ON | bobj->cdesc[keep].branch;
+         cut->rhs = can->cdesc[old_keep].rhs;
+         if ((cut->sense = can->cdesc[old_keep].sense) == 'R')
+            cut->range = can->cdesc[old_keep].range;
+         cut->branch = CUT_BRANCHED_ON | can->cdesc[old_keep].branch;
          constrain_row_set(lp_data, 1, &branch_row);
          lp_data->rows[branch_row].free = FALSE;
          break;
-   } // End of bobj->cdesc[keep].type switch statement
+   } // End of can->cdesc[old_keep].type switch statement
 
    /* Since this is a child we dived into, we know that TM stores the stati of
       extra vars/rows wrt the parent */

@@ -5,7 +5,7 @@
 /* SYMPHONY was jointly developed by Ted Ralphs (ted@lehigh.edu) and         */
 /* Laci Ladanyi (ladanyi@us.ibm.com).                                        */
 /*                                                                           */
-/* (c) Copyright 2000-2015 Ted Ralphs. All Rights Reserved.                  */
+/* (c) Copyright 2000-2019 Ted Ralphs. All Rights Reserved.                  */
 /*                                                                           */
 /* This software is licensed under the Eclipse Public License. Please see    */
 /* accompanying file for terms.                                              */
@@ -575,8 +575,9 @@ int parse_command_line(sym_environment *env, int argc, char **argv)
 		      c);
 	    }else{
 	       i++;
-	       tm_par->verbosity = lp_par->verbosity = cg_par->verbosity =
-		  cp_par->verbosity = env->par.verbosity = tmpi;
+	       prep_par->verbosity = tm_par->verbosity = lp_par->verbosity =
+               cg_par->verbosity = cp_par->verbosity = env->par.verbosity =
+               tmpi;
 	    }
 	 }else{
 	    printf("Warning: Missing argument to command-line switch -%c\n",c);
@@ -851,12 +852,14 @@ void print_statistics(node_times *tim, problem_stat *stat,
       printf("  Separation                %.3f\n", tim->separation); 
       printf("  Primal Heuristics         %.3f\n", tim->primal_heur); 
       printf("  Communication             %.3f\n", tim->communication);
-#ifndef COMPILE_IN_LP
       printf("=================== Parallel Overhead ======================\n");
       printf("  Communication         %.3f\n", tim->communication);
       printf("  Ramp Up Time (TM)     %.3f\n", tim->ramp_up_tm);
+#ifndef COMPILE_IN_LP
       printf("  Ramp Up Time (LP)     %.3f\n", tim->ramp_up_lp);
+#endif
       printf("  Ramp Down Time        %.3f\n", tim->ramp_down_time);
+#ifndef COMPILE_IN_LP
       printf("  Idle Time (Node Pack) %.3f\n", tim->start_node);
       printf("  Idle Time (Nodes)     %.3f\n", tim->idle_node);
       printf("  Idle Time (Names)     %.3f\n", tim->idle_names);

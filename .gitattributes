@@ -1,7 +1,9 @@
 * text=auto !eol
+.coin-or/projDesc.xml -text
 /.travis.yml -text
 /AUTHORS -text
 /Dependencies -text
+/INSTALL.md -text
 /LICENSE -text
 /Makefile.am -text
 /Makefile.in -text
@@ -134,7 +136,6 @@ SYMPHONY/MSVisualStudio/v9/unitTest.sln -text
 SYMPHONY/MSVisualStudio/v9/unitTest.vcproj -text
 SYMPHONY/Makefile.am -text
 SYMPHONY/Makefile.in -text
-SYMPHONY/Osi.patch -text
 SYMPHONY/compile -text
 SYMPHONY/config.guess -text
 SYMPHONY/config.sub -text
