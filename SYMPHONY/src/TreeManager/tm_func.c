@@ -1588,16 +1588,16 @@ int generate_children(tm_prob *tm, bc_node *node, branch_obj *bobj,
          
          /* If we have a non-base, new branching cut then few more things
             might have to be fixed */
-         if (new_branching_cut && bobj->name >= 0){
+         if (new_branching_cut && bobj->cdesc[i].name >= 0){
             /* Fix cutind and the basis description */
             desc->cutind.size = 1;
             desc->cutind.added = 1;
             desc->cutind.list = (int *) malloc(ISIZE);
-            desc->cutind.list[0] = bobj->name;
+            desc->cutind.list[0] = bobj->cdesc[i].name;
             if (desc->basis.basis_exists){
                desc->basis.extrarows.size = 1;
                desc->basis.extrarows.list = (int *) malloc(ISIZE);
-               desc->basis.extrarows.list[0] = bobj->name;
+               desc->basis.extrarows.list[0] = bobj->cdesc[i].name;
                desc->basis.extrarows.stat = (int *) malloc(ISIZE);
                desc->basis.extrarows.stat[0] = SLACK_BASIC;
             }
