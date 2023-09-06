@@ -1,55 +1,154 @@
-# SYMPHONY Version 5.6 README
+# SYMPHONY
 
-Welcome to SYMPHONY. SYMPHONY is distributed under the Eclipse Public License
-and is freely redistributable. All source code and documentation is Copyright
-2000-2019 by Ted Ralphs and others. This README may be redistributed freely.
+[![A COIN-OR Project](https://coin-or.github.io/coin-or-badge.png)](https://www.coin-or.org)
 
-# CURRENT BUILD STATUS
+Projects such as this one are maintained by a small group of volunteers under
+the auspices of the non-profit [COIN-OR Foundation](https://www.coin-or.org)
+and we need your help! Please consider [sponsoring our
+activities](https://github.com/sponsors/coin-or) or [volunteering](mailto:volunteer@coin-or.org) to help!
 
-[![Build Status](https://travis-ci.org/coin-or/SYMPHONY.svg?branch=master)](https://travis-ci.org/coin-or/SYMPHONY)
+[![Latest Release](https://img.shields.io/github/v/release/coin-or/SYMPHONY?sort=semver)](https://github.com/coin-or/SYMPHONY/releases)
 
-[![Build status](https://ci.appveyor.com/api/projects/status/220ltxwv2w2ac51s/branch/master?svg=true)](https://ci.appveyor.com/project/tkralphs/symphony/branch/master)
+_This file is auto-generated from [config.yml](.coin-or/config.yml) using the 
+[generate_readme](.coin-or/generate_readme) script.
+To make changes, please edit [config.yml](.coin-or/config.yml) or the generation scripts
+[here](.coin-or/generate_readme) and [here](https://github.com/coin-or/coinbrew/blob/master/scripts/generate_readme)._
+
+SYMPHONY is an open-source generic MILP solver, callable library, and
+extensible framework for implementing customized solvers for mixed-integer
+linear programs (MILPs). SYMPHONY can be built in various sequential and
+parallel configurations for either distributed or shared memory architectures
+and can be used "out of the box" as a solver for generic mixed-integer
+linear programs or customized through a wide variety of user callback
+functions and control parameters. SYMPHONY has a number of advanced
+capabilities stemming from the research projects discussed above, including
+the ability to solve multi-objective MILPs, the ability to warm start its
+solution procedure, and the ability to perform basic sensitivity analyses.
+SYMPHONY has has been deployed in a variety of application areas, including
+computational biology, wireless telecommunications, supply chain management,
+transportation services, and air transportation. 
+
+
+SYMPHONY is written in C and is released as open source under the [Eclipse Public License 2.0](http://www.opensource.org/licenses/EPL-2.0).
+
+It is distributed under the auspices of the [COIN-OR Foundation](https://www.coin-or.org).
+
+The SYMPHONY development site is https://github.com/coin-or/SYMPHONY.
 
 ## CITE
 
-[![DOI](https://zenodo.org/badge/23689820.svg)](https://zenodo.org/badge/latestdoi/23689820)
+Code: [![DOI](https://zenodo.org/badge/172774599.svg)](https://zenodo.org/badge/latestdoi/172774599)
+
+Paper: http://dx.doi.org/10.1007/0-387-23529-9_5
+
+## CURRENT BUILD STATUS
+
+[![Windows Builds](https://github.com/coin-or/SYMPHONY/actions/workflows/windows-ci.yml/badge.svg?branch=master)](https://github.com/coin-or/SYMPHONY/actions/workflows/windows-ci.yml?query=branch%3Amaster)
+
+[![Linux and MacOS Builds](https://github.com/coin-or/SYMPHONY/actions/workflows/linux-ci.yml/badge.svg?branch=master)](https://github.com/coin-or/SYMPHONY/actions/workflows/linux-ci.yml?query=branch%3Amaster)
 
 ## DOWNLOAD
 
-[ ![Download](https://api.bintray.com/packages/coin-or/download/SYMPHONY/images/download.svg?version=5.6) ](https://bintray.com/coin-or/download/SYMPHONY/5.6)
+What follows is a quick start guide for obtaining or building
+SYMPHONY on common platforms. More detailed information is
+available [here](https://coin-or.github.io/user_introduction.html).
 
-Binaries for most platforms are available for download from [Bintray](https://bintray.com/coin-or/download/SYMPHONY). Binaries can also be installed on specific platforms, as follows. 
+### Docker image
 
- * *Linux*: On Debian, SYMPHONY is available in the package `coinor-symphony` and can be installed with apt. On Fedora, SYMPHONY is available in the package `coin-or-SYMPHONY`. Pre-compiled binaries are also available on [BinTray](http://bintray.com/coin-or/download/SYMPHONY) and as part of the [COIN-OR Optimization Suite](https://www.coin-or.org/download/binary/OptimizationSuite/).
- * *Windows*: The easiest way to get SYMPHONY on Windows is to download binaries from [BinTray](http://bintray.com/coin-or/download/SYMPHONY) or just use the Windows installer for the [COIN Optimization Suite](http://www.coin-or.org/download/binary/OptimizationSuite), which provides Visual Studio compatible libraries and binaries (these are slightly out of date, however). 
- * *OS X*: The easiest way to get SYMPHONY on OSX is through Homebrew. It can be installed with
-   * `brew tap coin-or-tools/coinor`
-   * `brew install symphony`.
+There is a Docker image that provides SYMPHONY, as well as other projects
+in the [COIN-OR Optimization
+Suite](https://github.com/coin-or/COIN-OR-OptimizationSuite) [here](https://hub.docker.com/repository/docker/coinor/coin-or-optimization-suite)
 
-Due to license incompatibilities, pre-compiled binaries lack some functionality and are not available for the distributed parallel version of SYMPHONY. If binaries are not available for your platform for the latest version and you would like to request them to be built and posted, feel free to let us know on the mailing list or by opening an [issue](https://github.com/coin-or/SYMPHONY/newissue).
+### Binaries
 
-# DOCUMENTATION
+For newer releases, binaries will be made available as assets attached to
+releases in Github
+[here](https://github.com/coin-or/SYMPHONY/releases). Older binaries
+are archived as part of SYMPHONY
+[here](https://www.coin-or.org/download/binary/SYMPHONY).
 
-If you have downloaded a source distribution, LaTex source for the full documentation is available in the SYMPHONY/Doc/ subdirectory. Quick start guides and pointers to other on-line documentation can be found at the project Wiki:
+ * *Linux* (see https://repology.org/project/coin-or-symphony/versions for a complete listing): 
+   * arch:
+     ```
+     $ sudo pacman -S  coin-or-symphony
+     ```
+   * Debian/Ubuntu:
+     ```
+     $ sudo apt-get install  coinor-symphony coinor-libsymphony-dev
+     ```
+   * Fedora/Redhat/CentOS:
+     ```
+     $ sudo yum install  coin-or-SYMPHONY coin-or-SYMPHONY-devel
+     ```
+   * freebsd:
+     ```
+     $ sudo pkg install math/symphony
+     ```
+   * linuxbrew:
+     ```
+     $ brew install symphony
+     ```
+ * *Windows*: The easiest way to get SYMPHONY on Windows is to download an archive as described above.
+ * *Mac OS X*: The easiest way to get SYMPHONY on Mac OS X is through [Homebrew](https://brew.sh).
+     ```
+     $ brew tap coin-or-tools/coinor
+     $ brew install coin-or-tools/coinor/symphony
+     ```
 
-https://github.com/coin-or/SYMPHONY/wiki
+Due to license incompatibilities, pre-compiled binaries lack some 
+functionality. If binaries are not available for your platform for the latest 
+version and you would like to request them to be built and posted, feel free 
+to let us know on the mailing list. 
 
-The PDF version of the manual is available here:
+### Source
 
-https://coin-or.github.io/SYMPHONY/doc/SYMPHONY-5.6.17-Manual.pdf
+Source code can be obtained either by
 
-An on-line version that is for a slightly earlier release is here:
+ * Downloading a snapshot of the source code for the latest release version of SYMPHONY from the
+ [releases](https://github.com/coin-or/SYMPHONY/releases) page,
+ * Cloning this repository from [Github](https://github.com/coin-or/SYMPHONY), or 
+ * Using the [coinbrew](https://github.com/coin-or/coinbrew) script to get the project and all dependencies (recommended, see below).   
 
-http://coin-or.github.io/SYMPHONY/man-5.6/
+### Dependencies
 
-What follows is a very brief summary of
-installation and usage. Please see the documentation for more details.
+SYMPHONY has a number of dependencies, which are detailed in
+[config.yml](.coin-or/config.yml). Dependencies on other COIN-OR projects are
+automatically downloaded when obtaining the source with `coinbrew`. For some
+of the remaining third-party dependencies, automatic download scripts and
+build wrappers are provided (and will also be automatically run for required
+and recommended dependencies), while other libraries that are aeasy to obtain
+must be installed using an appropriate package manager (or may come with your
+OS by default). 
 
-## BUILDING FROM SOURCE
+## BUILDING from source
 
-If you downloaded a source distribution and would like instructions on
-building SYMPHONY or you downloaded a binary distribution and would like to
-know how to install it, please see the [INSTALL](https://github.com/coin-or/SYMPHONY/blob/master/INSTALL.md) file.
+These quick start instructions assume you are in a bash shell. 
+
+### Using `coinbrew`
+
+To download and build SYMPHONY from source, execute the 
+following on the command line. 
+```
+wget https://raw.githubusercontent.com/coin-or/coinbrew/master/coinbrew
+chmod u+x coinbrew
+./coinbrew fetch SYMPHONY@master
+./coinbrew build SYMPHONY
+```
+For more detailed instructions on coinbrew, see https://coin-or.github.io/coinbrew.
+The `coinbrew` script will fetch the additional projects specified in the Dependencies section of [config.yml](.coin-or/config.yml).
+
+### Without `coinbrew` (Expert users)
+
+ * Download the source code, e.g., by cloning the git repo https://github.com/coin-or/SYMPHONY
+ * Download and install the source code for the dependencies listed in [config.yml](.coin-or/config.yml)
+ * Build the code as follows (make sure to set PKG_CONFIG_PTH to install directory for dependencies).
+
+```
+./configure -C
+make
+make test
+make install
+```
 
 ## USING SYMPHONY
 
@@ -58,11 +157,11 @@ know how to install it, please see the [INSTALL](https://github.com/coin-or/SYMP
 To use SYMPHONY as a generic solver, type the executable name on the command
 line, followed by one or more of the command-line switches. On the
 command-line, there is one required switch---you must specify the location of
-the input file by using either "-F 'filename'" (MPS file or automatic
-detection with file extension) or "-L 'filename'" (LP format). If the "-D"
+the input file by using either `-F 'filename'` (MPS file or automatic
+detection with file extension) or `-L 'filename'` (LP format). If the `-D`
 switch is also present, the file will be assumed to be a GMPL model file with
-the data file specified after the "-D" switch. In LINUX, the following command
-would solve the instance "sample.mps"
+the data file specified after the `-D` switch. In LINUX, the following command
+would solve the instance `sample.mps`
 
 ```symphony -F sample.mps```
 
@@ -118,7 +217,7 @@ symphony [ -FL file ] [ -f parameter_file_name ]
 ### Using the SYMPHONY interactive optimizer
 
 To use SYMPHONY's Interactive shell, run the executable name without any
-command line arguments. Then type "help" or "?" to see a list of available
+command line arguments. Then type `help` or `?` to see a list of available
 commands which are as follows for this version:
 
 ```
@@ -134,7 +233,7 @@ commands which are as follows for this version:
 ```
 	
 So, if you want to load and solve an ampl/gmpl file, you will need to type
-"load sample.mod sample.dat" and then "solve". 
+`load sample.mod sample.dat` and then `solve`. 
 
 ### Using the callable library
 
@@ -159,14 +258,14 @@ matching solver.
 
 ## CURRENT TESTING STATUS
 
-SYMPHONY can now be used in a very large number of possible configurations and
+SYMPHONY can be used in a very large number of possible configurations and
 we simply aren't able to test them all. Below is a rough idea of the testing
 status of various configurations to date. If you need a certain configuration,
 I would be happy to help you get it running. Please let me know.
 
 ## LP INTERFACES
 
-**The native interfaces for OSL and CPLEX have now been deprecated**
+**The native interfaces for OSL and CPLEX have been deprecated**
 **Only LP solvers with OSI interfaces are supported**
 
 Well tested: CPLEX, CLP
@@ -179,19 +278,17 @@ Compiled, but not well tested: SPX
 
 ### SEQUENTIAL
 
-Sequential configurations are now automatically built and tested on Linux, OS X, and Windows using
- * [Travis-CI](https://travis-ci.org/coin-or/symphony)
- * [Appveyor](https://ci.appveyor.com/project/tkralphs/symphony)
+Sequential configurations are now automatically built and tested on Linux, OS X, and Windows using Github Actions (see above for status).
 
 ### SHARED MEMORY PARLLEL (OpenMP)
 
-Builds and passes unit test with gcc 4 and 5 and CLP on LINUX.
+Builds and passes unit test with gcc and CLP on LINUX.
 
 ### DISTRIBUTED MEMORY PARALLEL (PVM)
 
 Known configurations that build and pass unit test
 
-- gcc 4.* on LINUX with PVM 3.4
+- gcc on LINUX with PVM 3.4
 
 ### APPLICATIONS
 
@@ -224,18 +321,26 @@ generator, especially in combination with CPLEX. If the solver is not
 performing as it should, try turning off some of the cut generators to see if
 that fixes the problem. 
 
-### EXTERNAL COIN-OR LIBRARIES
+## ADDITIONAL DOCUMENTATION
 
-See the Depdencies file for a list of the external COIN-OR libraries on which
-SYMPHONY depends.
+If you have downloaded a source distribution, LaTex source for the full
+documentation is available in the SYMPHONY/Doc/ subdirectory. Quick start
+guides and pointers to other on-line documentation can be found below.
 
-### BUG REPORTS
+The PDF version of the manual is available here:
 
-To report a bug please file a ticket at 
+https://coin-or.github.io/SYMPHONY/doc/SYMPHONY-5.7.1-Manual.pdf
 
-https://github.com/coin-or/SYMPHONY/issues/new
+An on-line version that is for a slightly earlier release is here:
 
-## SUPPORT
+http://coin-or.github.io/SYMPHONY/man-5.7/
+
+## Project Links
+
+ * [Code of Conduct](https://www.coin-or.org/code-of-conduct/)
+ * [COIN-OR Web Site](http://www.coin-or.org/)
+ * [Discussion formum](https://github.com/coin-or/SYMPHONY/discussions)
+ * [Report a bug](https://github.com/coin-or/SYMPHONY/issues/new)
 
 ### AUTHORS
 
@@ -244,465 +349,16 @@ SYMPHONY was jointly developed by Ted Ralphs (ted@lehigh.edu) and Laci Ladanyi
 Mahajan (amahajan@iitb.ac.in.edu) have been instrumental in development since
 version 5.0.
 
-### ACKNOWLEDGEMENTS
+## ACKNOWLEDGEMENT
 
 SYMPHONY was developed with support from
-
-* National Science Foundation (Grants CMMI-1435453, CMMI-0728011, DMI-0522796, DMI-0534862, DMS-9527124, CMMI-1130914)
-* Texas ATP Grant 97-3604-010
-* Cornell University
-* Lehigh University
-* Zuse Institute Berlin
-* Research Campus Modal "Mathematical Optimization and Data Analysis 
-Laboratories" funded by the German Federal Ministry of Education and Research
+  * National Science Foundation grants CMMI-1435453, CMMI-0728011, DMI-0522796,
+    DMI-0534862, DMS-9527124, and CMMI-1130914.
+  * Texas ATP Grant 97-3604-010
+  * Cornell University
+  * Lehigh University
+  * Zuse Institute Berlin
+  * Research Campus Modal 'Mathematical Optimization and Data Analysis 
+Laboratories' funded by the German Federal Ministry of Education and Research
 (BMBF Grant 05M14ZAM) and by the DFG SFB/Transregio 154
-
-## CHANGELOG
-
-### Release 5.6.17
-  * Update appveyor
-  * Fix several reported bugs (see PRs 10-12, Issue 2)
-
-### Release 5.6.16
-  * Fix problem with appveyor configuration
-
-### Release 5.6.15
-  * Fix for configuration issue with OpenMP when building with Visual Studio
-    compiler under Msys2
-  * Fix for bugs in PVM version
-  * Fix for bugs in computing lower bounds
-  * Fix for compilation error with gcc 6
-  * Other minor fixes
-  * Enabling binary uploads with BinTray
-
-### Release 5.6.14
-  * Fixing small bug with re-setting environment in user applications.
-  * Fixing some memory errors arising with applications when extra variables are used.
-  * Fixing small bug with tracking variable indices in branching.
-  * Moving code inside critical block to prevent memory access errors in shared memory parallel mode.
-  * Added switches for turning hot starting on and off
-  * Updates to documentation
-  * Small fixes
-  * Added support for Travis and Appveyor
-
-### Release 5.6.13
-  * Release to update externals and pick up bug fixes in other projects
-
-### Release 5.6.12
-  * Fixed function for determining duals and reduced costs.
-  * Making it possible to build with cut validity checking enabled.
-  * Fixed bug with re-using of environment for new instances.
-  * Added parameter that allows saving of LP relaxations for debugging.
-  * Added function for writing LP files.
-  * Fixed bug that arose when we fixed a variable in strong branching (now, we keep going with LP loop when this happens).
-  * Fixed long-standing bug that arose when child 0 could be pruned while generating children.
-
-### Release 5.6.11
-  * Updated externals
-
-### Release 5.6.10
-  * Fixed bug with using more the 1 process in PVM
-  * Print to stderr on ctrl-c
-  * Fixed double free with prep level < 1
-
-### Release 5.6.9
-  * Fixed memory leak
-  * Fixed double free when nodes are retained in memory after pruning
-  * Added ability to access solution pool after solve to retrieve additional suboptimal solutions.
-  * Updates to documentation 
-
-### Release 5.6.8
-  * Fix to dependency linking.
-  * Fix for installation with ```DESTDIR```
-
-### Release 5.6.7
-  * Fixes to distributed parallel (PVM) version.
-  * Enable primal heuristics in distributed version.
-  * Update externals to most recent stables.
-  * Make dependency linking default.
-
-### Release 5.6.6:
-
- * Disabling pre-processor for multicriteria instances.
-
-### Release 5.6.5:
-
- * Added explicit dependence on libgomp, which is needed for linking with 
-compilers that don't supprt OpenMP (clang on OS X)
-
-### Release 5.6.4:
-
- * Fix to pkgconfig file to add flags for OpenMP.
-
- * Fixes for documentation.
-
- *  More fixes for dependency linking.
-
-### Release 5.6.3:
-
- * Fixes to applications to allow some preprocessing, which is needed for
-some primal heuristics to work.
-
- * Fixes to preprocessor settings so that the minimal amount of preprocessing
-is always done.
-
- *  Fixes to some methods so they still work preprely even when preprocessing is
-not done.
-
- *  Fixes to pre-processor for applications that construct the LP relaxation 
-algorithmically. 
-
- * Fix to pkgconfig file for applications.
-
- * Fix for dependency linking.
-
- * Other small bug fixes.
-
-### Release 5.6.2:
-
- * Updates and fixes to manual and documentation files.
-
- * Fixes for configuring with PVM.
-
- *  Fixes to allow dependency linking with the application library. 
-
- *  Bug fix for reliability branching. 
-
- * Bug fix for addition of column cuts
-
- * Updates to externals to fix bugs in dependent projects.
-
-### Release 5.6.1:
-
- * Small fixes for OpenMP
-
-### Release 5.6.0:
-
- * Major re-design of shared memory parallel mode for increased efficiency and stability.
-
- * Fixes for distributed memory parallel version (PVM)
-
- *  Fixes for bicriteria version
-
-### Release 5.5.7:
-
- * More updates to build harness
-
-### Release 5.5.6:
-
- * More updates to build harness
-
-### Release 5.5.5:
-
- * More updates to build harness
-
-### Release 5.5.4:
-
- * Fix memory leak
- * Delete superfluous header file
- *  More updates to build harness
-
-### Release 5.5.3:
-
- * More updates to build harness
-
-### Release 5.5.2:
-
- * Fix problems with Visual Studio project files
- * Update to build tools
-
-### Release 5.5.1:
-
- * Fix bug that caused all user applications to crash
-
-### Release 5.4.8:
-
- * Updates to MSVC++ files (applications now use property sheets and VRP app file is fixed).
- * Other fixes for build tools.
-
-### Release 5.4.7:
-
- * Updates to documentation
-
-### Release 5.5.0:
-
- * Improvements to preprocessing
- * Improvements to heuristics
- * Improvements to MSVC++ support
- * Bug fixes
- * Significant performance gains 
-
-### Release 5.4.6:
- * More fixes to allow use of CPLEX as LP solver
- * Fixes to interface with GMPL
-
-### Release 5.4.5:
-
- * Fixes to allow use of CPLEX as LP solver
- * Fixes to interface with GMPL
-
-### Release 5.4.4:
-
- * Fixes for build system
- * Other minor fixes
-
-### Release 5.4.3:
-
- * Updates to documentation.
- * Fix to allow box-constrained integer programs.
- *  Fix for GMPL integration
- *  Fix for readline versions
-
-### Release 5.4.2:
-
- * Updates to MSVC++ version 10 files
-
-### Release 5.4.1
-
- * Addition of MSVC++ version 9 files
-
-### Release 5.4.0:
-
- * Change license to EPL.
-
- * Support for MSVC++ version 10 added.
-
- *  Support for BuildTools version 0.7 to incoorporate recent enhancements, including proper library versioning in Linux, prohibiting installation of private headers, etc.
-
- *  Enhancements to unit testing.
-
- * Updating externals to new stable versions of dependent projects.
-
-### Release 5.3.4:
-
- * Fixes to the shared memory parallel version (OpenMP). It is now pretty
-stable, though some minor memory conflict conditions may arise (infrequently).
-
- * Fixes to allow all applications to build and run properly.
-
- *  Updates to documentation.
-
-### Release 5.3.3:
-
- * Fixes to the build system.
-
-### Release 5.3.2:
-
- * Fixes to the build system.
-
-### Release 5.3.1:
-
- * Fixes to the build system.
-
-### Release 5.3.0:
-
- * Major changes to the build system to allow buinding against installed
-binaries, provide pkg-config support, etc.
-
-### Release 5.2.4:
-
- * Fixes to restore functionality of the bicriteria solution capability.
-
- * Fixes to examples.
-
-### Release 5.2.3:
-
- * Updates to manual.
-
- * Added hooks to enable the use of VRPH (https://projects.coin-or.org/VRPH) within the VRP solver.
-
-### Release 5.2.2:
-
- * Bug fix release.
-
-### Release 5.2.1: 
-
- * Bug fix release.
-
-### Release 5.2.0:
-
- * SYMPHONY has a preprocessor now.
-
- * Feasibility pump primal heuristic implemented.
-
- *  Reliability branching is now the default branching strategy.
-
- *  Several new statistics now part of default output.
-
- * Correct setting of granularity of objective function value by calculating
-   GCD of coefficients.
-
- * Several changes in management of valid inequalities, quality checks and
-   detection of duplicacy.
-
- * Minor changes in management of LP solver interface.
-
- * Several small bug-fixes and improvements.
-
-### Release 5.1.10:
-
- * New dependencies.
-
-### Release 5.1.9:
-
- * New dependencies.
-
-### Release 5.1.8:
-
- * Introduced use of LP hot starting.
-
- * Improved management of cut generation.
-
- *  Updated externals
-
- *  Minor bug fixes
-
-### Release 5.1.7:
-
- * Minor bug fixes
-
-### Release 5.1.6:
-
- * Only a single header file (symphony.h) needs to be installed and user 
-applications only need to be able to find this one header file.
-
- * Fixes to MSVC++ project files.
-
- *  Removed dependence on qsortucb routines.
-
-### Release 5.1.5:
-
- * Added support for automatic download and build of Glpk (for reading of GMPL
-files).
-
- * Minor bugs fixed and compiler warnings eliminated.
-
- *  Updates to MS Visual Studio files.
-
- *  Added short installation verification test.
-
-### Release 5.1.4:
-
- * Added ability to read files in LP format.
-
- * Additional configuration options.
-
- *  Support for new classes of cutting planes.
-
- *  Improved algorithm control mechanism.
-
- * Improved output format and additional output options.
-
- * Improved signal handling.
-
- * Shared memory parallel version tested with OpenMP in Linux and Windows.
-
- * Added release configuration to MSVC++ build files.
-
- * Improved warm starting.
-
- * Fixes for configuration with SoPlex and Xpress.
-
- * Fixed configuration on PowerPC architectures.
-
-### Release 5.1.3:
-
- * Support for building static executables in Unix-like environments.
-
- * Improved signal-catching behavior in Unix-like environments.
-
- *  Updated documentation.
-
-### Release 5.1.2:
-
- * Update of externals.
-
- * Updated documentation.
-
-### Release 5.1.1:
-
- * Fixes for building in the Solaris operating system.
-
- * Fixes for using the GNU autotools to build with the cl compiler.
-
- * Fixes for sym.mak file in order to allow building with MSVC++ nmake utility.
-
- *  Fixes for building the unit test in the MSVC++ IDE.
-
- * Updated documentation
-
-### Release 5.1.0:
-
- * SYMPHONY now has an interactive optimizer that can be used through a
-command shell. In both the sequential and parallel configurations, the user
-can set parameters, load and solve instances interactively, and display
-results and statistics (see below).
-
- * SYMPHONY now supports automatic configuration using the new COIN-OR build
-system and the GNU autotools.Using autotools utilities, it is now possible to
-build SYMPHONY in most operating systems and with most common compilers
-compilers without user intervention.
-
- * Both the distributed and shared memory parallel configurations are now
-fully debugged, tested, and supported. The user can now build and execute
-custom SYMPHONY applications in parallel, as well as solving generic MILPs in
-parallel "out of the box."
-
- * There are now additional options for warm starting. The user can trim the
-warm starting tree before starting to resolve a problem. More specifically,
-the user can decide to initiate warm starting with a predefined partition of
-the final branch-and-cut tree resulting from a previous solution procedure.
-This partition can include either a number of nodes created first during the
-solution procedure or all of the nodes above a given level of the tree.
-
- * The COIN-OR repository, the current host of SYMPHONY has recently undergone 
-some significant improvements of its own that have resulted in improved 
-services to users. These include: 
-
-   * SYMPHONY has a new development Web site, where users can submit trouble
-     tickets, browse the source code interactively, and get up-to-date
-     information on development. The address of the new site is
-     https://projects.coin-or.org/SYMPHONY.
-
-   * SYMPHONY is now hosted using subversion, a version control system with
-     features vastly improved over CVS, the previous hosting software. This
-     has required some reorganization and renaming of the header files.
-
-   * SYMPHONY is now more tightly integrated with other COIN-OR projects. Due
-     to improved procedures for producing stable releases, it will now be much
-     easier for us to determine the exact version of SYMPHONY and all other
-     COIN projects you are using when you report a bug.
-
-   * SYMPHONY is now distributed with all COIN software needed to build a
-     complete solver. Previously, other COIN softrware packages had to be
-     downloaded and installed separately.
-
- * Two features have been deprecated and are no longer supported:
-
-   * The native interfaces to OSL and CPLEX are now deprecated and no longer
-supported. These solvers can be called through the COIN-OR OSI interface.
-
-   * Column generation functionality has also been officially deprecated. For
-     now, there are a number of other software packages that offer better
-     functionality than SYMPHONY for implementing branch and price algorithms.
-
- * CHANGES TO THE USER INTERFACE (FROM SYMPHONY 5.0)
-
-   * There was one minor change to the user callback API from version 5.0 to
-     5.1. The user can now execute a primal heuristic in the
-     user_is_feasible() callback and return the solution to SYMPHONY. The API
-     for the user_is_feasible() subroutine is now
-     ```C
-     int user_is_feasible(void *user, double lpetol, int varnum, int *indices,
-		          double *values, int *feasible, double *objval,
-		          char branching, double *heur_solution)
-     ```
-Any feasible solution can be passed (in dense format) through the last
-argument to this function.
-
-   * Several new subroutines were added to the callable library API.
-
-   * The name of the header file containing the SYMPHONY API has been changed
-     from ```symphony_api.h``` to ```symphony.h``` (though the former has been
-     retained for backword compatibility purposes).
 

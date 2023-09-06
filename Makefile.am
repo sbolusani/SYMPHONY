@@ -7,64 +7,54 @@
 #                                                                           #
 # The author of this file is Menal Guzelsoy                                 #
 #                                                                           #
-# (c) Copyright 2006-2015 Lehigh University. All Rights Reserved.           #
+# (c) Copyright 2006-2019 Lehigh University. All Rights Reserved.           #
 #                                                                           #
 # This software is licensed under the Eclipse Public License. Please see    #
 # accompanying file for terms.                                              #
 #                                                                           #
 #===========================================================================#
 
-## $Id$
+## $Id: Makefile.am 344 2006-06-01 19:17:05Z menal $
 
-AUTOMAKE_OPTIONS = foreign
-
-EXTRA_DIST = 
+include BuildTools/Makemain.inc
 
 ########################################################################
 #                          Subdirectories                              #
 ########################################################################
 
-# subdirs is set by configure as the list of all subdirectories to recurse
-# into
+SUBDIRS = src src/OsiSym
 
-SUBDIRS = $(subdirs)
+pkgconfiglib_DATA = symphony.pc symphony-app.pc osi-sym.pc
 
 ########################################################################
 #                           Extra Targets                              #
 ########################################################################
 
 test: all
-	cd SYMPHONY; $(MAKE) test
-
-fulltest: all
-	cd SYMPHONY; $(MAKE) fulltest
-
-ptest: all
-	cd SYMPHONY; $(MAKE) ptest
-
-pfulltest: all
-	cd SYMPHONY; $(MAKE) pfulltest
+	cd test; $(MAKE) test
 
 unitTest: test
 
+fulltest: all
+	cd test; $(MAKE) fulltest
+
+ptest: all
+	cd test; $(MAKE) ptest
+
 punitTest: ptest
 
-tests: all
-	for dir in $(SUBDIRS); do \
-	  if test -r $$dir/test/Makefile; then \
-	    (cd $$dir; $(MAKE) test) \
-	  fi; \
-	done
+pfulltest: all
+	cd test; $(MAKE) pfulltest
 
-unitTests: tests
+clean-local:
+	if test -r test/Makefile; then cd test; $(MAKE) clean; fi
 
-.PHONY: test unitTest ptest punitTest tests unitTests fulltest pfulltest
+distclean-local:
+	if test -r test/Makefile; then cd test; $(MAKE) distclean; fi
 
-########################################################################
-#                         Maintainer Stuff                             #
-########################################################################
+install-exec-local: install-doc
 
-# Files that are generated and should be cleaned with make distclean
-DISTCLEANFILES = coin_subdirs.txt
+uninstall-local: uninstall-doc
 
-include BuildTools/Makemain.inc
+.PHONY: test unitTest ptest punitTest
+
